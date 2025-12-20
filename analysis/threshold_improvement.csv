@@ -1,0 +1,13 @@
+prompt,model,total,improved,improvement_rate
+test-heavy_qwen2.5-coder,7b,120,106,0.883
+evidence_deepseek-coder_6.7b-base-q4,0,120,86,0.717
+evidence_llama3_8b-instruct-q4,0,120,93,0.775
+default_deepseek-coder_6.7b-base-q4,0,120,105,0.875
+concise_qwen2.5-coder,7b,120,105,0.875
+evidence_qwen2.5-coder,7b,120,68,0.567
+default_qwen2.5-coder,7b,120,95,0.792
+default_llama3_8b-instruct-q4,0,120,109,0.908
+test-heavy_deepseek-coder_6.7b-base-q4,0,120,95,0.792
+concise_deepseek-coder_6.7b-base-q4,0,120,103,0.858
+test-heavy_llama3_8b-instruct-q4,0,120,86,0.717
+concise_llama3_8b-instruct-q4,0,120,105,0.875
