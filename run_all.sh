@@ -18,6 +18,18 @@ MAX_CHANGE="${MAX_CHANGE:-0.7}"
 OLLAMA_MODEL="${OLLAMA_MODEL:-llama3:8b-instruct-q4_0}"
 OUT_DIR="${OUT_DIR:-$ROOT/results}"
 HF_OUT_DIR="${HF_OUT_DIR:-$ROOT/results_hf}"
+PHASE2_DIR="${PHASE2_DIR:-$ROOT/../CRScore/human_study/phase2}"
+SPLITS_OUT="${SPLITS_OUT:-$OUT_DIR/splits.json}"
+FEWSHOT_OUT="${FEWSHOT_OUT:-$OUT_DIR/fewshot_pairs.json}"
+PROPOSAL_OUT="${PROPOSAL_OUT:-$OUT_DIR/proposal_v1.jsonl}"
+PROPOSAL_SUMMARY="${PROPOSAL_SUMMARY:-$OUT_DIR/proposal_v1_summary.json}"
+HUMAN_BASELINE_SYSTEM="${HUMAN_BASELINE_SYSTEM:-msg}"
+HUMAN_TARGET_SYSTEM="${HUMAN_TARGET_SYSTEM:-gpt3.5_pred}"
+HUMAN_CORR_SYSTEM="${HUMAN_CORR_SYSTEM:-}"
+HUMAN_OUTPUTS="${HUMAN_OUTPUTS:-}"
+HUMAN_SUMMARY_OUT="${HUMAN_SUMMARY_OUT:-$OUT_DIR/human_eval_summary.json}"
+EXTRA_OLLAMA_MODELS="${EXTRA_OLLAMA_MODELS:-deepseek-coder:6.7b-base-q4_0,qwen2.5-coder:3b,qwen2.5-coder:7b}" # comma-separated
+THRESHOLD_PROMPTS="${THRESHOLD_PROMPTS:-default,concise,evidence,test-heavy}"
 
 mkdir -p "$OUT_DIR"
 
@@ -38,6 +50,21 @@ ensure_ollama() {
   return 0
 }
 
+have_model() {
+  local model="$1"
+  curl -s http://127.0.0.1:11434/api/tags | grep -q "\"name\":\"${model}\""
+}
+
+slug() {
+  echo "$1" | tr '/:' '__' | tr ' ' '_' | tr '[:upper:]' '[:lower:]'
+}
+
+echo "=== Freeze deterministic dev/test split ==="
+python "$ROOT/scripts/make_splits.py" --raw-data "$RAW_DATA" --out "$SPLITS_OUT"
+
+echo "=== Build few-shot pairs for proposal v1 baseline ==="
+python "$ROOT/scripts/build_fewshot_pairs.py" --raw-data "$RAW_DATA" --tau "$TAU" --model-path "$MODEL_PATH" --out "$FEWSHOT_OUT"
+
 echo "=== Baseline (human seed) ==="
 python "$ROOT/evaluate.py" --raw-data "$RAW_DATA" --split test --tau "$TAU" --model-path "$MODEL_PATH" --baseline-only --summary-out "$OUT_DIR/baseline_summary.json"
 
@@ -57,42 +84,81 @@ python "$ROOT/evaluate.py" --raw-data "$RAW_DATA" --split test --tau "$TAU" --mo
 python "$ROOT/evaluate.py" --raw-data "$RAW_DATA" --split test --tau "$TAU" --model-path "$MODEL_PATH" --outputs "$OUT_DIR/no_evidence.jsonl" --summary-out "$OUT_DIR/no_evidence_summary.json"
 python "$ROOT/evaluate.py" --raw-data "$RAW_DATA" --split test --tau "$TAU" --model-path "$MODEL_PATH" --outputs "$OUT_DIR/rewrite_loop.jsonl" --summary-out "$OUT_DIR/rewrite_loop_summary.json"
 
-echo "=== Threshold-gated refinement with Ollama (${OLLAMA_MODEL}) ==="
+echo "=== Proposal v1 few-shot baseline (Ollama sweep) ==="
 if ensure_ollama; then
-  python "$ROOT/threshold_refine.py" \
-    --raw-data "$RAW_DATA" \
-    --split test \
-    --tau "$TAU" \
-    --threshold 0.6 \
-    --model-type ollama \
-    --model-name "$OLLAMA_MODEL" \
-    --prompt-variant default \
-    --output "$OUT_DIR/threshold_ollama_default.jsonl"
+  MODELS_LIST="$OLLAMA_MODEL"
+  if [[ -n "$EXTRA_OLLAMA_MODELS" ]]; then
+    MODELS_LIST="$MODELS_LIST,$EXTRA_OLLAMA_MODELS"
+  fi
+  IFS=',' read -r -a MODELS <<<"$MODELS_LIST"
+  for MODEL in "${MODELS[@]}"; do
+    MODEL_TRIMMED="$(echo "$MODEL" | xargs)"
+    [[ -z "$MODEL_TRIMMED" ]] && continue
+    if ! have_model "$MODEL_TRIMMED"; then
+      echo "Model $MODEL_TRIMMED not available in Ollama; skipping."
+      continue
+    fi
+    MODEL_SLUG=$(slug "$MODEL_TRIMMED")
+    OUT_FILE="$OUT_DIR/proposal_v1_${MODEL_SLUG}.jsonl"
+    SUM_FILE="$OUT_DIR/proposal_v1_${MODEL_SLUG}_summary.json"
+    python "$ROOT/proposal_v1.py" \
+      --raw-data "$RAW_DATA" \
+      --split test \
+      --tau "$TAU" \
+      --model-path "$MODEL_PATH" \
+      --fewshot "$FEWSHOT_OUT" \
+      --ollama-model "$MODEL_TRIMMED" \
+      --out "$OUT_FILE"
+    python "$ROOT/evaluate.py" \
+      --raw-data "$RAW_DATA" \
+      --split test \
+      --tau "$TAU" --model-path "$MODEL_PATH" \
+      --outputs "$OUT_FILE" \
+      --summary-out "$SUM_FILE"
+  done
+else
+  echo "Skipping proposal v1 baseline; ollama not available."
+fi
 
-  python "$ROOT/evaluate.py" \
-    --raw-data "$RAW_DATA" \
-    --split test \
-    --tau "$TAU" --model-path "$MODEL_PATH" \
-    --outputs "$OUT_DIR/threshold_ollama_default.jsonl" \
-    --summary-out "$OUT_DIR/threshold_ollama_default_summary.json"
+echo "=== Threshold-gated refinement (prompt/model sweep) ==="
+if ensure_ollama; then
+  MODELS_LIST="$OLLAMA_MODEL"
+  if [[ -n "$EXTRA_OLLAMA_MODELS" ]]; then
+    MODELS_LIST="$MODELS_LIST,$EXTRA_OLLAMA_MODELS"
+  fi
+  IFS=',' read -r -a MODELS <<<"$MODELS_LIST"
+  IFS=',' read -r -a PROMPTS <<<"$THRESHOLD_PROMPTS"
+  for MODEL in "${MODELS[@]}"; do
+    MODEL_TRIMMED="$(echo "$MODEL" | xargs)"
+    [[ -z "$MODEL_TRIMMED" ]] && continue
+    if ! have_model "$MODEL_TRIMMED"; then
+      echo "Model $MODEL_TRIMMED not available in Ollama; skipping."
+      continue
+    fi
+    MODEL_SLUG=$(slug "$MODEL_TRIMMED")
+    for PV in "${PROMPTS[@]}"; do
+      PV_TRIMMED="$(echo "$PV" | xargs)"
+      [[ -z "$PV_TRIMMED" ]] && continue
+      OUT_FILE="$OUT_DIR/threshold_${PV_TRIMMED}_${MODEL_SLUG}.jsonl"
+      SUM_FILE="$OUT_DIR/threshold_${PV_TRIMMED}_${MODEL_SLUG}_summary.json"
+      python "$ROOT/threshold_refine.py" \
+        --raw-data "$RAW_DATA" \
+        --split test \
+        --tau "$TAU" \
+        --threshold 0.6 \
+        --model-type ollama \
+        --model-name "$MODEL_TRIMMED" \
+        --prompt-variant "$PV_TRIMMED" \
+        --output "$OUT_FILE"
 
-  echo "=== Threshold-gated refinement (concise prompt) with Ollama (${OLLAMA_MODEL}) ==="
-  python "$ROOT/threshold_refine.py" \
-    --raw-data "$RAW_DATA" \
-    --split test \
-    --tau "$TAU" \
-    --threshold 0.6 \
-    --model-type ollama \
-    --model-name "$OLLAMA_MODEL" \
-    --prompt-variant concise \
-    --output "$OUT_DIR/threshold_ollama_concise.jsonl"
-
-  python "$ROOT/evaluate.py" \
-    --raw-data "$RAW_DATA" \
-    --split test \
-    --tau "$TAU" --model-path "$MODEL_PATH" \
-    --outputs "$OUT_DIR/threshold_ollama_concise.jsonl" \
-    --summary-out "$OUT_DIR/threshold_ollama_concise_summary.json"
+      python "$ROOT/evaluate.py" \
+        --raw-data "$RAW_DATA" \
+        --split test \
+        --tau "$TAU" --model-path "$MODEL_PATH" \
+        --outputs "$OUT_FILE" \
+        --summary-out "$SUM_FILE"
+    done
+  done
 fi
 
 if [[ -n "${QWEN_MODEL_PATH:-}" ]]; then
@@ -117,6 +183,26 @@ if [[ -n "${QWEN_MODEL_PATH:-}" ]]; then
     --summary-out "$HF_OUT_DIR/threshold_qwen_evidence_summary.json"
 else
   echo "QWEN_MODEL_PATH not set; skipping HF local Qwen threshold experiment."
+fi
+
+if [[ "${SKIP_HUMAN_EVAL:-0}" != "1" ]]; then
+  echo "=== Phase2 human evaluation stats ==="
+  if python - <<'PY' >/dev/null 2>&1
+import importlib
+importlib.import_module("scipy.stats")
+PY
+  then
+    HUMAN_ARGS=(--raw-data "$RAW_DATA" --phase2-dir "$PHASE2_DIR" --split test --tau "$TAU" --model-path "$MODEL_PATH" --baseline-system "$HUMAN_BASELINE_SYSTEM" --target-system "$HUMAN_TARGET_SYSTEM")
+    if [[ -n "$HUMAN_CORR_SYSTEM" ]]; then
+      HUMAN_ARGS+=(--corr-system "$HUMAN_CORR_SYSTEM")
+    fi
+    if [[ -n "$HUMAN_OUTPUTS" ]]; then
+      HUMAN_ARGS+=(--outputs "$HUMAN_OUTPUTS")
+    fi
+    python "$ROOT/human_eval.py" "${HUMAN_ARGS[@]}" --summary-out "$HUMAN_SUMMARY_OUT"
+  else
+    echo "Skipping human_eval.py because scipy is not installed."
+  fi
 fi
 
 echo "All runs complete. Check summaries under $OUT_DIR and $HF_OUT_DIR."

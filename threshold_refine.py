@@ -24,21 +24,33 @@ if str(ROOT) not in sys.path:
 from core.data import ReviewInstance, build_instances, load_raw_data, split_by_language
 from core.scoring import CRScorer
 from core.editors import HFLocalEditor, OllamaEditor
-from core.loop import LoopConfig
+from core.loop import LoopConfig, BASE_SYSTEM_PROMPT
 
 
 PROMPTS: Dict[str, str] = {
     "default": (
-        "You are a senior code reviewer. Improve the review if it misses important claims or evidence. "
-        "Be concise and specific. Do not invent unsupported statements."
+        "Improve the review to better match the claims.\n"
+        "Include missing important points, remove irrelevant content.\n"
+        "If a claim is uncertain, phrase it as a verification/test request.\n"
+        "Output only the revised review."
     ),
     "concise": (
-        "Tighten the review to the essential points tied to the diff and claims. "
-        "Remove fluff, keep concrete issues and tests."
+        "Rewrite the review into 1-3 sentences.\n"
+        "Must mention the main change and one concrete check/test.\n"
+        "Remove everything else.\n"
+        "Output only the revised review."
     ),
     "evidence": (
-        "Ground every added statement in the provided claims/evidence. "
-        "If a point is not supported, omit it. Keep the review short."
+        "Add ONLY points that are directly supported by the claims text.\n"
+        "If support is missing, do not add the point (suggest a test instead).\n"
+        "Keep it short and specific.\n"
+        "Output only the revised review."
+    ),
+    "test-heavy": (
+        "Focus on test coverage and failure modes implied by the claims.\n"
+        "Add 1-2 concrete tests (happy path + edge case).\n"
+        "Avoid restating obvious change details unless needed.\n"
+        "Output only the revised review."
     ),
 }
 
@@ -51,7 +63,9 @@ def build_prompt(review: str, claims: List[str], prompt_variant: str) -> str:
 
 def choose_editor(args: argparse.Namespace):
     if args.model_type == "ollama":
-        return OllamaEditor(model=args.model_name, temperature=args.temperature)
+        editor = OllamaEditor(model=args.model_name, temperature=args.temperature)
+        editor.system = BASE_SYSTEM_PROMPT
+        return editor
     if args.model_type == "hf-local":
         if not args.model_name:
             raise ValueError("Provide --model-name for hf-local (path or HF id).")

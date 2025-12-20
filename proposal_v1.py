@@ -16,11 +16,7 @@ if str(ROOT) not in sys.path:
 from core.data import build_instances, load_raw_data, split_by_language
 from core.scoring import CRScorer
 from core.editors import OllamaEditor
-
-SYSTEM = """You are a senior software engineer. Improve a junior developer's review comment.
-Preserve intent, avoid hallucinations, and ground feedback in the code change and evidence.
-Output only the improved review text.
-"""
+from core.loop import BASE_SYSTEM_PROMPT
 
 
 def build_prompt(pairs, score_dict, diff: str, review: str) -> str:
@@ -43,6 +39,15 @@ Code change (diff):
 
 Junior review:
 {review}
+
+Use the examples to transform the junior review into a higher-quality review.
+Use the score dimensions to guide edits:
+- If Comp is low: add missing key points from the change.
+- If Con is low: delete vague/unrelated sentences.
+- If Rel is low: align with the actual change and implications.
+Rules:
+- Do not invent details not supported by the diff or evidence implied by the examples.
+- Prefer 1-4 high-signal sentences.
 
 Improved review:
 """
@@ -88,7 +93,7 @@ def main() -> None:
 
     scorer = CRScorer(model_path=args.model_path, tau=args.tau)
     editor = OllamaEditor(model=args.ollama_model, temperature=0.2)
-    editor.system = SYSTEM
+    editor.system = BASE_SYSTEM_PROMPT
 
     instances = build_instances(load_raw_data(args.raw_data))
     splits = split_by_language(instances)

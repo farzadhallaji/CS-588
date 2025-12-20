@@ -17,7 +17,7 @@ if str(ROOT) not in sys.path:
 
 from core.data import build_instances, load_raw_data, split_by_language
 from core.editors import EchoEditor, HFLocalEditor, OllamaEditor, TemplateEditor
-from core.loop import IterativeRefiner, LoopConfig
+from core.loop import IterativeRefiner, LoopConfig, BASE_SYSTEM_PROMPT, LOOP_INSTRUCTIONS
 from core.scoring import CRScorer
 
 
@@ -42,6 +42,18 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-iter", type=int, default=3)
     parser.add_argument("--tau-evidence", type=float, default=LoopConfig.tau_evidence, help="Similarity threshold for evidence support.")
     parser.add_argument("--max-change", type=float, default=LoopConfig.max_sentence_change, help="Maximum allowed sentence change ratio.")
+    parser.add_argument(
+        "--prompt-style",
+        choices=list(LOOP_INSTRUCTIONS.keys()),
+        default=None,
+        help="Prompt instruction block to use inside the loop prompt.",
+    )
+    parser.add_argument(
+        "--system-prompt",
+        type=str,
+        default=None,
+        help="Override system prompt for LLM editors (ollama / hf-local).",
+    )
     return parser.parse_args()
 
 
@@ -70,13 +82,20 @@ def config_from_args(args: argparse.Namespace) -> LoopConfig:
     cfg.max_sentence_change = args.max_change
     if args.mode == "k1":
         cfg.max_iter = 1
+        cfg.prompt_style = "k1"
     if args.mode == "no-selection":
         cfg.selection = "random"
+        cfg.prompt_style = "no-selection"
     if args.mode == "no-evidence":
         cfg.disable_evidence = True
+        cfg.prompt_style = "no-evidence"
     if args.mode == "rewrite":
         cfg.rewrite = True
         cfg.max_sentence_change = 1.0
+        cfg.prompt_style = "rewrite"
+    if args.prompt_style:
+        cfg.prompt_style = args.prompt_style
+    cfg.prompt_text = LOOP_INSTRUCTIONS.get(cfg.prompt_style, "")
     return cfg
 
 
@@ -94,6 +113,8 @@ def main() -> None:
 
     scorer = CRScorer(model_path=args.model_path, tau=args.tau)
     editor = build_editor(args)
+    if hasattr(editor, "system"):
+        editor.system = args.system_prompt or BASE_SYSTEM_PROMPT
     cfg = config_from_args(args)
     runner = IterativeRefiner(scorer, editor, cfg)
 

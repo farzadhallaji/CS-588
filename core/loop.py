@@ -13,6 +13,55 @@ from .scoring import CRScorer, ScoreResult
 from .utils import lexical_overlap, sentence_change_ratio, sentence_split
 from .editors import BaseEditor
 
+BASE_SYSTEM_PROMPT = (
+    "You are a senior code reviewer. Improve the given review comment.\n"
+    "Constraints:\n"
+    "* Be specific to the diff/claims provided.\n"
+    "* Do NOT invent facts, files, or behaviors not supported by the inputs.\n"
+    "* Prefer short, high-signal feedback (correctness, edge cases, tests, risks).\n"
+    "* Avoid generic advice and style nits unless they directly affect correctness.\n"
+    "Output ONLY the revised review text (no explanations, no bullets unless the review itself uses bullets)."
+)
+
+LOOP_INSTRUCTIONS = {
+    "loop": (
+        "Task: minimally edit the current review.\n"
+        "Goals (in priority order):\n"
+        "1. Cover the uncovered pseudo-references using the evidence snippets when available.\n"
+        "2. Remove or rewrite the offending low-similarity sentences.\n"
+        "3. Keep or improve precision: do not add unrelated points.\n"
+        "Rules:\n"
+        "* If evidence does not support a new statement, do not add it.\n"
+        "* If you are unsure, suggest a test instead of asserting behavior.\n"
+        "Output only the revised review."
+    ),
+    "k1": (
+        "Task: produce your best revision in ONE pass.\n"
+        "Include the most important uncovered items and delete low-signal/off-topic content.\n"
+        "Do not add anything unsupported by evidence or the diff.\n"
+        "Output only the revised review."
+    ),
+    "rewrite": (
+        "Task: rewrite the review from scratch for maximum quality.\n"
+        "Include the key uncovered pseudo-references and the most important risks/tests.\n"
+        "Do not invent facts; ground statements in the diff/evidence.\n"
+        "Keep it concise (prefer 1-4 sentences).\n"
+        "Output only the revised review."
+    ),
+    "no-evidence": (
+        "Task: improve the review using ONLY the current review + uncovered pseudo-references + the diff context implied by them.\n"
+        "Do NOT cite or rely on evidence (assume it is unavailable).\n"
+        "Rules:\n"
+        "* Do not assert specific code behavior unless it is explicitly stated in the pseudo-references.\n"
+        "* Prefer concrete test suggestions over factual claims.\n"
+        "Keep it short and specific. Output only the revised review."
+    ),
+    "no-selection": (
+        "Generate an alternative valid revision that is still faithful to the inputs, but phrased differently.\n"
+        "Keep the same constraints: no hallucinations, concise, specific, test-focused."
+    ),
+}
+
 
 @dataclass
 class LoopConfig:
@@ -29,6 +78,9 @@ class LoopConfig:
     rewrite: bool = False
     disable_evidence: bool = False
     selection: str = "crscore"  # crscore|random|shortest
+    prompt_style: str = "loop"  # loop|k1|rewrite|no-evidence|no-selection
+    system_prompt: str = BASE_SYSTEM_PROMPT
+    prompt_text: str = ""
 
 
 def build_prompt(
@@ -38,6 +90,7 @@ def build_prompt(
     evidence: Dict[str, List[str]],
     length_budget: int,
     rewrite: bool,
+    instructions: str,
 ) -> str:
     parts = [
         "Current review:",
@@ -62,10 +115,8 @@ def build_prompt(
     else:
         parts.append("- (no evidence available)")
     parts.append("")
-    instr = "Rewrite freely for quality." if rewrite else "Edit minimally."
-    parts.append(
-        f"Instructions: {instr} Keep within {length_budget} characters. Do not invent unsupported claims. Output only the revised review."
-    )
+    instr_prefix = instructions or ("Rewrite freely for quality." if rewrite else "Edit minimally.")
+    parts.append(f"{instr_prefix}\nKeep within {length_budget} characters. Do not invent unsupported claims. Output only the revised review.")
     return "\n".join(parts)
 
 
@@ -133,6 +184,7 @@ class IterativeRefiner:
                 evidence=evidence_map,
                 length_budget=cfg.length_budget,
                 rewrite=cfg.rewrite,
+                instructions=cfg.prompt_text,
             )
             candidates = self.editor.propose(
                 current_review=current,
