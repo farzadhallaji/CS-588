@@ -1,0 +1,979 @@
+(crs) ➜  ProposedApproach ./run_all.sh         
+=== Baseline (human seed) ===
+Skipping import of cpp extensions due to incompatible torch version 2.9.1+cu128 for torchao version 0.14.1             Please see https://github.com/pytorch/ao/issues/2919 for more info
+{
+  "java": {
+    "Rel": 0.44965460465460466,
+    "Con": 0.525,
+    "Comp": 0.42529761904761904,
+    "N": 40
+  },
+  "js": {
+    "Rel": 0.5145773551926802,
+    "Con": 0.6458333333333334,
+    "Comp": 0.5157936507936508,
+    "N": 40
+  },
+  "py": {
+    "Rel": 0.3807936507936508,
+    "Con": 0.5083333333333333,
+    "Comp": 0.35125,
+    "N": 40
+  },
+  "overall": {
+    "Rel": 0.44834187021364524,
+    "Con": 0.5597222222222222,
+    "Comp": 0.43078042328042326,
+    "N": 120
+  }
+}
+=== Main loop + ablations (template editor) ===
+Skipping import of cpp extensions due to incompatible torch version 2.9.1+cu128 for torchao version 0.14.1             Please see https://github.com/pytorch/ao/issues/2919 for more info
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=0.750 Con=1.000 Comp=0.600
+[java idx=1] Rel=0.800 Con=1.000 Comp=0.667
+[java idx=1] Rel=0.923 Con=1.000 Comp=0.857
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=0.545 Con=0.500 Comp=0.600
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=0.857 Con=1.000 Comp=0.750
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=0.400 Con=0.333 Comp=0.500
+[java idx=1] Rel=0.444 Con=0.500 Comp=0.400
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=0.500 Con=1.000 Comp=0.333
+[java idx=1] Rel=0.286 Con=1.000 Comp=0.167
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[js idx=1] Rel=0.667 Con=1.000 Comp=0.500
+[js idx=1] Rel=0.444 Con=1.000 Comp=0.286
+[js idx=1] Rel=0.533 Con=0.500 Comp=0.571
+[js idx=1] Rel=0.667 Con=1.000 Comp=0.500
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.500 Con=0.500 Comp=0.500
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.500 Con=1.000 Comp=0.333
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.833 Con=1.000 Comp=0.714
+[js idx=1] Rel=0.333 Con=1.000 Comp=0.200
+[js idx=1] Rel=0.222 Con=1.000 Comp=0.125
+[js idx=1] Rel=0.462 Con=0.500 Comp=0.429
+[js idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[js idx=1] Rel=0.286 Con=1.000 Comp=0.167
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.364 Con=0.500 Comp=0.286
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.286 Con=1.000 Comp=0.167
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.769 Con=1.000 Comp=0.625
+[js idx=1] Rel=0.400 Con=0.333 Comp=0.500
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.400 Con=1.000 Comp=0.250
+[py idx=1] Rel=0.250 Con=1.000 Comp=0.143
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=0.222 Con=0.500 Comp=0.143
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.667 Con=1.000 Comp=0.500
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=0.286 Con=0.333 Comp=0.250
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.250 Con=0.500 Comp=0.167
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=0.286 Con=0.500 Comp=0.200
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.909 Con=1.000 Comp=0.833
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.400 Con=0.333 Comp=0.500
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.400 Con=1.000 Comp=0.250
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+Skipping import of cpp extensions due to incompatible torch version 2.9.1+cu128 for torchao version 0.14.1             Please see https://github.com/pytorch/ao/issues/2919 for more info
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=0.750 Con=1.000 Comp=0.600
+[java idx=1] Rel=0.800 Con=1.000 Comp=0.667
+[java idx=1] Rel=0.923 Con=1.000 Comp=0.857
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=0.545 Con=0.500 Comp=0.600
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=0.857 Con=1.000 Comp=0.750
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=0.889 Con=1.000 Comp=0.800
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=0.400 Con=0.333 Comp=0.500
+[java idx=1] Rel=0.444 Con=0.500 Comp=0.400
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=0.500 Con=1.000 Comp=0.333
+[java idx=1] Rel=0.286 Con=1.000 Comp=0.167
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[js idx=1] Rel=0.667 Con=1.000 Comp=0.500
+[js idx=1] Rel=0.444 Con=1.000 Comp=0.286
+[js idx=1] Rel=0.533 Con=0.500 Comp=0.571
+[js idx=1] Rel=0.667 Con=1.000 Comp=0.500
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.857 Con=0.750 Comp=1.000
+[js idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.500 Con=0.500 Comp=0.500
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.500 Con=1.000 Comp=0.333
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.833 Con=1.000 Comp=0.714
+[js idx=1] Rel=0.333 Con=1.000 Comp=0.200
+[js idx=1] Rel=0.222 Con=1.000 Comp=0.125
+[js idx=1] Rel=0.462 Con=0.500 Comp=0.429
+[js idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[js idx=1] Rel=0.286 Con=1.000 Comp=0.167
+[js idx=1] Rel=0.800 Con=0.667 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.364 Con=0.500 Comp=0.286
+[js idx=1] Rel=0.857 Con=0.750 Comp=1.000
+[js idx=1] Rel=0.286 Con=1.000 Comp=0.167
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.769 Con=1.000 Comp=0.625
+[js idx=1] Rel=0.400 Con=0.333 Comp=0.500
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.400 Con=1.000 Comp=0.250
+[py idx=1] Rel=0.250 Con=1.000 Comp=0.143
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=0.222 Con=0.500 Comp=0.143
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.667 Con=1.000 Comp=0.500
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=0.286 Con=0.333 Comp=0.250
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.250 Con=0.500 Comp=0.167
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=0.286 Con=0.500 Comp=0.200
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.909 Con=1.000 Comp=0.833
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.400 Con=0.333 Comp=0.500
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.400 Con=1.000 Comp=0.250
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+Skipping import of cpp extensions due to incompatible torch version 2.9.1+cu128 for torchao version 0.14.1             Please see https://github.com/pytorch/ao/issues/2919 for more info
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=0.750 Con=1.000 Comp=0.600
+[java idx=1] Rel=0.800 Con=1.000 Comp=0.667
+[java idx=1] Rel=0.923 Con=1.000 Comp=0.857
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=0.857 Con=1.000 Comp=0.750
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=0.889 Con=1.000 Comp=0.800
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=0.909 Con=1.000 Comp=0.833
+[java idx=1] Rel=0.889 Con=1.000 Comp=0.800
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=0.500 Con=1.000 Comp=0.333
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[js idx=1] Rel=0.667 Con=1.000 Comp=0.500
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.889 Con=0.800 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.857 Con=0.750 Comp=1.000
+[js idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.909 Con=0.833 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.833 Con=1.000 Comp=0.714
+[js idx=1] Rel=0.333 Con=1.000 Comp=0.200
+[js idx=1] Rel=0.222 Con=1.000 Comp=0.125
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.286 Con=1.000 Comp=0.167
+[js idx=1] Rel=0.800 Con=0.667 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.364 Con=0.500 Comp=0.286
+[js idx=1] Rel=0.857 Con=0.750 Comp=1.000
+[js idx=1] Rel=0.286 Con=1.000 Comp=0.167
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.769 Con=1.000 Comp=0.625
+[js idx=1] Rel=0.889 Con=0.800 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.923 Con=0.857 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.400 Con=1.000 Comp=0.250
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=0.222 Con=0.500 Comp=0.143
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.667 Con=1.000 Comp=0.500
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=0.923 Con=0.857 Comp=1.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.909 Con=0.833 Comp=1.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=0.909 Con=0.833 Comp=1.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.909 Con=1.000 Comp=0.833
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.889 Con=0.800 Comp=1.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+Skipping import of cpp extensions due to incompatible torch version 2.9.1+cu128 for torchao version 0.14.1             Please see https://github.com/pytorch/ao/issues/2919 for more info
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=0.750 Con=1.000 Comp=0.600
+[java idx=1] Rel=0.800 Con=1.000 Comp=0.667
+[java idx=1] Rel=0.923 Con=1.000 Comp=0.857
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=0.545 Con=0.500 Comp=0.600
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=0.857 Con=1.000 Comp=0.750
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=0.400 Con=0.333 Comp=0.500
+[java idx=1] Rel=0.444 Con=0.500 Comp=0.400
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=0.500 Con=1.000 Comp=0.333
+[java idx=1] Rel=0.286 Con=1.000 Comp=0.167
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[js idx=1] Rel=0.667 Con=1.000 Comp=0.500
+[js idx=1] Rel=0.444 Con=1.000 Comp=0.286
+[js idx=1] Rel=0.533 Con=0.500 Comp=0.571
+[js idx=1] Rel=0.667 Con=1.000 Comp=0.500
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.500 Con=0.500 Comp=0.500
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.500 Con=1.000 Comp=0.333
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.833 Con=1.000 Comp=0.714
+[js idx=1] Rel=0.333 Con=1.000 Comp=0.200
+[js idx=1] Rel=0.222 Con=1.000 Comp=0.125
+[js idx=1] Rel=0.462 Con=0.500 Comp=0.429
+[js idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[js idx=1] Rel=0.286 Con=1.000 Comp=0.167
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.364 Con=0.500 Comp=0.286
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.286 Con=1.000 Comp=0.167
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.769 Con=1.000 Comp=0.625
+[js idx=1] Rel=0.400 Con=0.333 Comp=0.500
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.400 Con=1.000 Comp=0.250
+[py idx=1] Rel=0.250 Con=1.000 Comp=0.143
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=0.222 Con=0.500 Comp=0.143
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.667 Con=1.000 Comp=0.500
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=0.286 Con=0.333 Comp=0.250
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.250 Con=0.500 Comp=0.167
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=0.286 Con=0.500 Comp=0.200
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.909 Con=1.000 Comp=0.833
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.400 Con=0.333 Comp=0.500
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.400 Con=1.000 Comp=0.250
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+Skipping import of cpp extensions due to incompatible torch version 2.9.1+cu128 for torchao version 0.14.1             Please see https://github.com/pytorch/ao/issues/2919 for more info
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=0.750 Con=1.000 Comp=0.600
+[java idx=1] Rel=0.800 Con=1.000 Comp=0.667
+[java idx=1] Rel=0.923 Con=1.000 Comp=0.857
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=0.545 Con=0.500 Comp=0.600
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=0.857 Con=1.000 Comp=0.750
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=0.400 Con=0.333 Comp=0.500
+[java idx=1] Rel=0.444 Con=0.500 Comp=0.400
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=0.500 Con=1.000 Comp=0.333
+[java idx=1] Rel=0.286 Con=1.000 Comp=0.167
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[js idx=1] Rel=0.667 Con=1.000 Comp=0.500
+[js idx=1] Rel=0.444 Con=1.000 Comp=0.286
+[js idx=1] Rel=0.533 Con=0.500 Comp=0.571
+[js idx=1] Rel=0.667 Con=1.000 Comp=0.500
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.500 Con=0.500 Comp=0.500
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.500 Con=1.000 Comp=0.333
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.833 Con=1.000 Comp=0.714
+[js idx=1] Rel=0.333 Con=1.000 Comp=0.200
+[js idx=1] Rel=0.222 Con=1.000 Comp=0.125
+[js idx=1] Rel=0.462 Con=0.500 Comp=0.429
+[js idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[js idx=1] Rel=0.286 Con=1.000 Comp=0.167
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.364 Con=0.500 Comp=0.286
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.286 Con=1.000 Comp=0.167
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.769 Con=1.000 Comp=0.625
+[js idx=1] Rel=0.400 Con=0.333 Comp=0.500
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.400 Con=1.000 Comp=0.250
+[py idx=1] Rel=0.250 Con=1.000 Comp=0.143
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=0.222 Con=0.500 Comp=0.143
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.667 Con=1.000 Comp=0.500
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=0.286 Con=0.333 Comp=0.250
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.250 Con=0.500 Comp=0.167
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=0.286 Con=0.500 Comp=0.200
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.909 Con=1.000 Comp=0.833
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.400 Con=0.333 Comp=0.500
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.400 Con=1.000 Comp=0.250
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+Skipping import of cpp extensions due to incompatible torch version 2.9.1+cu128 for torchao version 0.14.1             Please see https://github.com/pytorch/ao/issues/2919 for more info
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=0.750 Con=1.000 Comp=0.600
+[java idx=1] Rel=0.800 Con=1.000 Comp=0.667
+[java idx=1] Rel=0.923 Con=1.000 Comp=0.857
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=0.857 Con=1.000 Comp=0.750
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=0.500 Con=1.000 Comp=0.333
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[java idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[js idx=1] Rel=0.667 Con=1.000 Comp=0.500
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.833 Con=1.000 Comp=0.714
+[js idx=1] Rel=0.333 Con=1.000 Comp=0.200
+[js idx=1] Rel=0.222 Con=1.000 Comp=0.125
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.286 Con=1.000 Comp=0.167
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.364 Con=0.500 Comp=0.286
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.286 Con=1.000 Comp=0.167
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.769 Con=1.000 Comp=0.625
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[js idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.400 Con=1.000 Comp=0.250
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=0.222 Con=0.500 Comp=0.143
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.667 Con=1.000 Comp=0.500
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=0.909 Con=1.000 Comp=0.833
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=0.000 Con=0.000 Comp=0.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+[py idx=1] Rel=1.000 Con=1.000 Comp=1.000
+=== Evaluate loop outputs ===
+Skipping import of cpp extensions due to incompatible torch version 2.9.1+cu128 for torchao version 0.14.1             Please see https://github.com/pytorch/ao/issues/2919 for more info
+{
+  "java": {
+    "Rel": 0.0,
+    "Con": 0.0,
+    "Comp": 0.0,
+    "N": 40
+  },
+  "js": {
+    "Rel": 0.0,
+    "Con": 0.0,
+    "Comp": 0.0,
+    "N": 40
+  },
+  "py": {
+    "Rel": 0.0,
+    "Con": 0.0,
+    "Comp": 0.0,
+    "N": 40
+  },
+  "overall": {
+    "Rel": 0.0,
+    "Con": 0.0,
+    "Comp": 0.0,
+    "N": 120
+  }
+}
+Skipping import of cpp extensions due to incompatible torch version 2.9.1+cu128 for torchao version 0.14.1             Please see https://github.com/pytorch/ao/issues/2919 for more info
+{
+  "java": {
+    "Rel": 0.0,
+    "Con": 0.0,
+    "Comp": 0.0,
+    "N": 40
+  },
+  "js": {
+    "Rel": 0.0,
+    "Con": 0.0,
+    "Comp": 0.0,
+    "N": 40
+  },
+  "py": {
+    "Rel": 0.0,
+    "Con": 0.0,
+    "Comp": 0.0,
+    "N": 40
+  },
+  "overall": {
+    "Rel": 0.0,
+    "Con": 0.0,
+    "Comp": 0.0,
+    "N": 120
+  }
+}
+Skipping import of cpp extensions due to incompatible torch version 2.9.1+cu128 for torchao version 0.14.1             Please see https://github.com/pytorch/ao/issues/2919 for more info
+{
+  "java": {
+    "Rel": 0.4516527980014987,
+    "Con": 0.4464285714285714,
+    "Comp": 0.4974404761904762,
+    "N": 40
+  },
+  "js": {
+    "Rel": 0.4622857886492431,
+    "Con": 0.4714285714285714,
+    "Comp": 0.5001686507936508,
+    "N": 40
+  },
+  "py": {
+    "Rel": 0.6564841092454725,
+    "Con": 0.6357142857142857,
+    "Comp": 0.7223214285714286,
+    "N": 40
+  },
+  "overall": {
+    "Rel": 0.5234742319654048,
+    "Con": 0.5178571428571428,
+    "Comp": 0.5733101851851852,
+    "N": 120
+  }
+}
+Skipping import of cpp extensions due to incompatible torch version 2.9.1+cu128 for torchao version 0.14.1             Please see https://github.com/pytorch/ao/issues/2919 for more info
+{
+  "java": {
+    "Rel": 0.0,
+    "Con": 0.0,
+    "Comp": 0.0,
+    "N": 40
+  },
+  "js": {
+    "Rel": 0.0,
+    "Con": 0.0,
+    "Comp": 0.0,
+    "N": 40
+  },
+  "py": {
+    "Rel": 0.0,
+    "Con": 0.0,
+    "Comp": 0.0,
+    "N": 40
+  },
+  "overall": {
+    "Rel": 0.0,
+    "Con": 0.0,
+    "Comp": 0.0,
+    "N": 120
+  }
+}
+Skipping import of cpp extensions due to incompatible torch version 2.9.1+cu128 for torchao version 0.14.1             Please see https://github.com/pytorch/ao/issues/2919 for more info
+{
+  "java": {
+    "Rel": 0.0,
+    "Con": 0.0,
+    "Comp": 0.0,
+    "N": 40
+  },
+  "js": {
+    "Rel": 0.0,
+    "Con": 0.0,
+    "Comp": 0.0,
+    "N": 40
+  },
+  "py": {
+    "Rel": 0.0,
+    "Con": 0.0,
+    "Comp": 0.0,
+    "N": 40
+  },
+  "overall": {
+    "Rel": 0.0,
+    "Con": 0.0,
+    "Comp": 0.0,
+    "N": 120
+  }
+}
+Skipping import of cpp extensions due to incompatible torch version 2.9.1+cu128 for torchao version 0.14.1             Please see https://github.com/pytorch/ao/issues/2919 for more info
+{
+  "java": {
+    "Rel": 0.4516527980014987,
+    "Con": 0.4464285714285714,
+    "Comp": 0.4974404761904762,
+    "N": 40
+  },
+  "js": {
+    "Rel": 0.4622857886492431,
+    "Con": 0.4714285714285714,
+    "Comp": 0.5001686507936508,
+    "N": 40
+  },
+  "py": {
+    "Rel": 0.6564841092454725,
+    "Con": 0.6357142857142857,
+    "Comp": 0.7223214285714286,
+    "N": 40
+  },
+  "overall": {
+    "Rel": 0.5234742319654048,
+    "Con": 0.5178571428571428,
+    "Comp": 0.5733101851851852,
+    "N": 120
+  }
+}
+=== Threshold-gated refinement with Ollama (llama3:8b-instruct-q4_0) ===
+Starting ollama daemon...
+Skipping import of cpp extensions due to incompatible torch version 2.9.1+cu128 for torchao version 0.14.1             Please see https://github.com/pytorch/ao/issues/2919 for more info
+Skipping import of cpp extensions due to incompatible torch version 2.9.1+cu128 for torchao version 0.14.1             Please see https://github.com/pytorch/ao/issues/2919 for more info
+{
+  "java": {
+    "Rel": 0.46550496301710437,
+    "Con": 0.4875,
+    "Comp": 0.49083333333333334,
+    "N": 40
+  },
+  "js": {
+    "Rel": 0.4893948189148548,
+    "Con": 0.5375,
+    "Comp": 0.5098142135642135,
+    "N": 40
+  },
+  "py": {
+    "Rel": 0.5956882389187074,
+    "Con": 0.56875,
+    "Comp": 0.6850595238095238,
+    "N": 40
+  },
+  "overall": {
+    "Rel": 0.5168626736168889,
+    "Con": 0.53125,
+    "Comp": 0.5619023569023569,
+    "N": 120
+  }
+}
+=== Threshold-gated refinement (concise prompt) with Ollama (llama3:8b-instruct-q4_0) ===
+Skipping import of cpp extensions due to incompatible torch version 2.9.1+cu128 for torchao version 0.14.1             Please see https://github.com/pytorch/ao/issues/2919 for more info
+{
+  "java": {
+    "Rel": 0.4163895595614662,
+    "Con": 0.5083333333333333,
+    "Comp": 0.3805952380952381,
+    "N": 40
+  },
+  "js": {
+    "Rel": 0.47213657570321926,
+    "Con": 0.5833333333333333,
+    "Comp": 0.44090277777777775,
+    "N": 40
+  },
+  "py": {
+    "Rel": 0.6573162866545219,
+    "Con": 0.7083333333333333,
+    "Comp": 0.6680952380952381,
+    "N": 40
+  },
+  "overall": {
+    "Rel": 0.5152808073064025,
+    "Con": 0.6,
+    "Comp": 0.49653108465608464,
+    "N": 120
+  }
+}
+QWEN_MODEL_PATH not set; skipping HF local Qwen threshold experiment.
+All runs complete. Check summaries under /home/ri/Desktop/S2/DS/package/ProposedApproach/results and /home/ri/Desktop/S2/DS/package/ProposedApproach/results_hf.
