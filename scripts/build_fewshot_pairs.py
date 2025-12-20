@@ -38,7 +38,7 @@ def parse_args() -> argparse.Namespace:
         default=ROOT.parent / "CRScore" / "human_study" / "phase1" / "raw_data.json",
         help="Path to raw_data.json.",
     )
-    parser.add_argument("--tau", type=float, default=0.6, help="CRScore similarity threshold.")
+    parser.add_argument("--tau", type=float, default=0.7314, help="CRScore similarity threshold.")
     parser.add_argument("--model-path", type=str, default="mixedbread-ai/mxbai-embed-large-v1", help="SentenceTransformer model.")
     parser.add_argument("--max-pairs", type=int, default=12, help="How many few-shot pairs to keep.")
     parser.add_argument("--candidate-pool", type=int, default=60, help="Top-N high-quality dev reviews to consider.")

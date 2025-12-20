@@ -139,7 +139,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--outputs", type=Path, default=None, help="System output JSONL to align with human ratings.")
     parser.add_argument("--split", choices=["dev", "test", "all"], default="test")
-    parser.add_argument("--tau", type=float, default=0.6, help="CRScore similarity threshold.")
+    parser.add_argument("--tau", type=float, default=0.7314, help="CRScore similarity threshold.")
     parser.add_argument("--model-path", type=str, default="mixedbread-ai/mxbai-embed-large-v1", help="SentenceTransformer model.")
     parser.add_argument(
         "--baseline-system",

@@ -67,7 +67,7 @@ LOOP_INSTRUCTIONS = {
 class LoopConfig:
     max_iter: int = 3
     num_samples: int = 2
-    tau: float = 0.6
+    tau: float = 0.7314
     tau_evidence: float = 0.35
     precision_drop: float = 0.05
     max_sentence_change: float = 0.7

@@ -62,7 +62,7 @@ def parse_args() -> argparse.Namespace:
         help="Path to raw_data.json.",
     )
     parser.add_argument("--split", choices=["dev", "test"], default="test")
-    parser.add_argument("--tau", type=float, default=0.6, help="CRScore similarity threshold.")
+    parser.add_argument("--tau", type=float, default=0.7314, help="CRScore similarity threshold.")
     parser.add_argument(
         "--model-path",
         type=str,

@@ -4,7 +4,7 @@ import json
 import random
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Set
 
 
 @dataclass
@@ -39,12 +39,37 @@ def extract_pseudo_refs(rec: dict) -> List[str]:
 
 def build_instances(records: List[dict]) -> List[ReviewInstance]:
     instances: List[ReviewInstance] = []
-    for rec in records:
-        idx_val = rec.get("index", rec.get("idx"))
+    seen_idxs: Set[int] = set()
+
+    def _coerce_int(val, default: int | None) -> int | None:
         try:
-            inst_idx = int(idx_val) if idx_val is not None else len(instances)
+            return int(val)
         except (TypeError, ValueError):
-            inst_idx = len(instances)
+            try:
+                return int(str(val).strip())
+            except Exception:
+                return default
+
+    for i, rec in enumerate(records):
+        # Prefer provided idx/index/id; fall back to positional index.
+        inst_idx = None
+        for candidate in (rec.get("idx"), rec.get("index"), rec.get("id")):
+            if candidate is None or candidate == "":
+                continue
+            coerced = _coerce_int(candidate, default=None)
+            if coerced is not None:
+                inst_idx = coerced
+                break
+        if inst_idx is None:
+            inst_idx = i
+
+        # Deduplicate to avoid collisions that would break evaluation mapping.
+        if inst_idx in seen_idxs:
+            inst_idx = max(seen_idxs) + 1
+            while inst_idx in seen_idxs:
+                inst_idx += 1
+        seen_idxs.add(inst_idx)
+
         refs = extract_pseudo_refs(rec)
         instances.append(
             ReviewInstance(

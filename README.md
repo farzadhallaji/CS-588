@@ -45,7 +45,7 @@ How to run
   ```
 - Adjust CRScore tau / edit budget if no improvements are selected:
   ```
-  python ProposedApproach/run.py --tau 0.6 --max-change 0.7 --limit 5
+  python ProposedApproach/run.py --tau 0.7314 --max-change 0.7 --limit 5
   ```
 - Local HF LLM editor:
   ```

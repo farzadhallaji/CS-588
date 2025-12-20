@@ -12,7 +12,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 RAW_DATA="${RAW_DATA:-$ROOT/../CRScore/human_study/phase1/raw_data.json}"
 MODEL_PATH="${MODEL_PATH:-mixedbread-ai/mxbai-embed-large-v1}"
-TAU="${TAU:-0.6}"
+TAU="${TAU:-0.7314}"
 TAU_EVIDENCE="${TAU_EVIDENCE:-0.35}"
 MAX_CHANGE="${MAX_CHANGE:-0.7}"
 OLLAMA_MODEL="${OLLAMA_MODEL:-llama3:8b-instruct-q4_0}"
@@ -55,34 +55,58 @@ have_model() {
   curl -s http://127.0.0.1:11434/api/tags | grep -q "\"name\":\"${model}\""
 }
 
+run_or_skip() {
+  local target="$1"
+  shift
+  if [[ -s "$target" ]]; then
+    echo "Skipping; found $target"
+    return 0
+  fi
+  echo "Running: $*"
+  "$@"
+}
+
+ensure_model() {
+  local model="$1"
+  if have_model "$model"; then
+    return 0
+  fi
+  echo "Pulling ollama model '$model'..."
+  if ollama pull "$model"; then
+    return 0
+  fi
+  echo "Failed to pull '$model'; skipping this model."
+  return 1
+}
+
 slug() {
   echo "$1" | tr '/:' '__' | tr ' ' '_' | tr '[:upper:]' '[:lower:]'
 }
 
 echo "=== Freeze deterministic dev/test split ==="
-python "$ROOT/scripts/make_splits.py" --raw-data "$RAW_DATA" --out "$SPLITS_OUT"
+run_or_skip "$SPLITS_OUT" python "$ROOT/scripts/make_splits.py" --raw-data "$RAW_DATA" --out "$SPLITS_OUT"
 
 echo "=== Build few-shot pairs for proposal v1 baseline ==="
-python "$ROOT/scripts/build_fewshot_pairs.py" --raw-data "$RAW_DATA" --tau "$TAU" --model-path "$MODEL_PATH" --out "$FEWSHOT_OUT"
+run_or_skip "$FEWSHOT_OUT" python "$ROOT/scripts/build_fewshot_pairs.py" --raw-data "$RAW_DATA" --tau "$TAU" --model-path "$MODEL_PATH" --out "$FEWSHOT_OUT"
 
 echo "=== Baseline (human seed) ==="
-python "$ROOT/evaluate.py" --raw-data "$RAW_DATA" --split test --tau "$TAU" --model-path "$MODEL_PATH" --baseline-only --summary-out "$OUT_DIR/baseline_summary.json"
+run_or_skip "$OUT_DIR/baseline_summary.json" python "$ROOT/evaluate.py" --raw-data "$RAW_DATA" --split test --tau "$TAU" --model-path "$MODEL_PATH" --baseline-only --summary-out "$OUT_DIR/baseline_summary.json"
 
 echo "=== Main loop + ablations (template editor) ==="
-python "$ROOT/run.py" --raw-data "$RAW_DATA" --split test --mode loop --model-path "$MODEL_PATH" --tau "$TAU" --tau-evidence "$TAU_EVIDENCE" --max-change "$MAX_CHANGE" --output "$OUT_DIR/loop.jsonl"
-python "$ROOT/run.py" --raw-data "$RAW_DATA" --split test --mode k1 --model-path "$MODEL_PATH" --tau "$TAU" --tau-evidence "$TAU_EVIDENCE" --max-change "$MAX_CHANGE" --output "$OUT_DIR/single_edit.jsonl"
-python "$ROOT/run.py" --raw-data "$RAW_DATA" --split test --mode rewrite --max-iter 1 --model-path "$MODEL_PATH" --tau "$TAU" --tau-evidence "$TAU_EVIDENCE" --max-change 1.0 --output "$OUT_DIR/single_rewrite.jsonl"
-python "$ROOT/run.py" --raw-data "$RAW_DATA" --split test --mode no-selection --model-path "$MODEL_PATH" --tau "$TAU" --tau-evidence "$TAU_EVIDENCE" --max-change "$MAX_CHANGE" --output "$OUT_DIR/no_selection.jsonl"
-python "$ROOT/run.py" --raw-data "$RAW_DATA" --split test --mode no-evidence --model-path "$MODEL_PATH" --tau "$TAU" --tau-evidence "$TAU_EVIDENCE" --max-change "$MAX_CHANGE" --output "$OUT_DIR/no_evidence.jsonl"
-python "$ROOT/run.py" --raw-data "$RAW_DATA" --split test --mode rewrite --model-path "$MODEL_PATH" --tau "$TAU" --tau-evidence "$TAU_EVIDENCE" --max-change 1.0 --output "$OUT_DIR/rewrite_loop.jsonl"
+run_or_skip "$OUT_DIR/loop.jsonl" python "$ROOT/run.py" --raw-data "$RAW_DATA" --split test --mode loop --model-path "$MODEL_PATH" --tau "$TAU" --tau-evidence "$TAU_EVIDENCE" --max-change "$MAX_CHANGE" --output "$OUT_DIR/loop.jsonl"
+run_or_skip "$OUT_DIR/single_edit.jsonl" python "$ROOT/run.py" --raw-data "$RAW_DATA" --split test --mode k1 --model-path "$MODEL_PATH" --tau "$TAU" --tau-evidence "$TAU_EVIDENCE" --max-change "$MAX_CHANGE" --output "$OUT_DIR/single_edit.jsonl"
+run_or_skip "$OUT_DIR/single_rewrite.jsonl" python "$ROOT/run.py" --raw-data "$RAW_DATA" --split test --mode rewrite --max-iter 1 --model-path "$MODEL_PATH" --tau "$TAU" --tau-evidence "$TAU_EVIDENCE" --max-change 1.0 --output "$OUT_DIR/single_rewrite.jsonl"
+run_or_skip "$OUT_DIR/no_selection.jsonl" python "$ROOT/run.py" --raw-data "$RAW_DATA" --split test --mode no-selection --model-path "$MODEL_PATH" --tau "$TAU" --tau-evidence "$TAU_EVIDENCE" --max-change "$MAX_CHANGE" --output "$OUT_DIR/no_selection.jsonl"
+run_or_skip "$OUT_DIR/no_evidence.jsonl" python "$ROOT/run.py" --raw-data "$RAW_DATA" --split test --mode no-evidence --model-path "$MODEL_PATH" --tau "$TAU" --tau-evidence "$TAU_EVIDENCE" --max-change "$MAX_CHANGE" --output "$OUT_DIR/no_evidence.jsonl"
+run_or_skip "$OUT_DIR/rewrite_loop.jsonl" python "$ROOT/run.py" --raw-data "$RAW_DATA" --split test --mode rewrite --model-path "$MODEL_PATH" --tau "$TAU" --tau-evidence "$TAU_EVIDENCE" --max-change 1.0 --output "$OUT_DIR/rewrite_loop.jsonl"
 
 echo "=== Evaluate loop outputs ==="
-python "$ROOT/evaluate.py" --raw-data "$RAW_DATA" --split test --tau "$TAU" --model-path "$MODEL_PATH" --outputs "$OUT_DIR/loop.jsonl" --summary-out "$OUT_DIR/loop_summary.json"
-python "$ROOT/evaluate.py" --raw-data "$RAW_DATA" --split test --tau "$TAU" --model-path "$MODEL_PATH" --outputs "$OUT_DIR/single_edit.jsonl" --summary-out "$OUT_DIR/single_edit_summary.json"
-python "$ROOT/evaluate.py" --raw-data "$RAW_DATA" --split test --tau "$TAU" --model-path "$MODEL_PATH" --outputs "$OUT_DIR/single_rewrite.jsonl" --summary-out "$OUT_DIR/single_rewrite_summary.json"
-python "$ROOT/evaluate.py" --raw-data "$RAW_DATA" --split test --tau "$TAU" --model-path "$MODEL_PATH" --outputs "$OUT_DIR/no_selection.jsonl" --summary-out "$OUT_DIR/no_selection_summary.json"
-python "$ROOT/evaluate.py" --raw-data "$RAW_DATA" --split test --tau "$TAU" --model-path "$MODEL_PATH" --outputs "$OUT_DIR/no_evidence.jsonl" --summary-out "$OUT_DIR/no_evidence_summary.json"
-python "$ROOT/evaluate.py" --raw-data "$RAW_DATA" --split test --tau "$TAU" --model-path "$MODEL_PATH" --outputs "$OUT_DIR/rewrite_loop.jsonl" --summary-out "$OUT_DIR/rewrite_loop_summary.json"
+run_or_skip "$OUT_DIR/loop_summary.json" python "$ROOT/evaluate.py" --raw-data "$RAW_DATA" --split test --tau "$TAU" --model-path "$MODEL_PATH" --outputs "$OUT_DIR/loop.jsonl" --summary-out "$OUT_DIR/loop_summary.json"
+run_or_skip "$OUT_DIR/single_edit_summary.json" python "$ROOT/evaluate.py" --raw-data "$RAW_DATA" --split test --tau "$TAU" --model-path "$MODEL_PATH" --outputs "$OUT_DIR/single_edit.jsonl" --summary-out "$OUT_DIR/single_edit_summary.json"
+run_or_skip "$OUT_DIR/single_rewrite_summary.json" python "$ROOT/evaluate.py" --raw-data "$RAW_DATA" --split test --tau "$TAU" --model-path "$MODEL_PATH" --outputs "$OUT_DIR/single_rewrite.jsonl" --summary-out "$OUT_DIR/single_rewrite_summary.json"
+run_or_skip "$OUT_DIR/no_selection_summary.json" python "$ROOT/evaluate.py" --raw-data "$RAW_DATA" --split test --tau "$TAU" --model-path "$MODEL_PATH" --outputs "$OUT_DIR/no_selection.jsonl" --summary-out "$OUT_DIR/no_selection_summary.json"
+run_or_skip "$OUT_DIR/no_evidence_summary.json" python "$ROOT/evaluate.py" --raw-data "$RAW_DATA" --split test --tau "$TAU" --model-path "$MODEL_PATH" --outputs "$OUT_DIR/no_evidence.jsonl" --summary-out "$OUT_DIR/no_evidence_summary.json"
+run_or_skip "$OUT_DIR/rewrite_loop_summary.json" python "$ROOT/evaluate.py" --raw-data "$RAW_DATA" --split test --tau "$TAU" --model-path "$MODEL_PATH" --outputs "$OUT_DIR/rewrite_loop.jsonl" --summary-out "$OUT_DIR/rewrite_loop_summary.json"
 
 echo "=== Proposal v1 few-shot baseline (Ollama sweep) ==="
 if ensure_ollama; then
@@ -94,14 +118,13 @@ if ensure_ollama; then
   for MODEL in "${MODELS[@]}"; do
     MODEL_TRIMMED="$(echo "$MODEL" | xargs)"
     [[ -z "$MODEL_TRIMMED" ]] && continue
-    if ! have_model "$MODEL_TRIMMED"; then
-      echo "Model $MODEL_TRIMMED not available in Ollama; skipping."
+    if ! ensure_model "$MODEL_TRIMMED"; then
       continue
     fi
     MODEL_SLUG=$(slug "$MODEL_TRIMMED")
     OUT_FILE="$OUT_DIR/proposal_v1_${MODEL_SLUG}.jsonl"
     SUM_FILE="$OUT_DIR/proposal_v1_${MODEL_SLUG}_summary.json"
-    python "$ROOT/proposal_v1.py" \
+    run_or_skip "$OUT_FILE" python "$ROOT/proposal_v1.py" \
       --raw-data "$RAW_DATA" \
       --split test \
       --tau "$TAU" \
@@ -109,7 +132,7 @@ if ensure_ollama; then
       --fewshot "$FEWSHOT_OUT" \
       --ollama-model "$MODEL_TRIMMED" \
       --out "$OUT_FILE"
-    python "$ROOT/evaluate.py" \
+    run_or_skip "$SUM_FILE" python "$ROOT/evaluate.py" \
       --raw-data "$RAW_DATA" \
       --split test \
       --tau "$TAU" --model-path "$MODEL_PATH" \
@@ -131,8 +154,7 @@ if ensure_ollama; then
   for MODEL in "${MODELS[@]}"; do
     MODEL_TRIMMED="$(echo "$MODEL" | xargs)"
     [[ -z "$MODEL_TRIMMED" ]] && continue
-    if ! have_model "$MODEL_TRIMMED"; then
-      echo "Model $MODEL_TRIMMED not available in Ollama; skipping."
+    if ! ensure_model "$MODEL_TRIMMED"; then
       continue
     fi
     MODEL_SLUG=$(slug "$MODEL_TRIMMED")
@@ -141,7 +163,7 @@ if ensure_ollama; then
       [[ -z "$PV_TRIMMED" ]] && continue
       OUT_FILE="$OUT_DIR/threshold_${PV_TRIMMED}_${MODEL_SLUG}.jsonl"
       SUM_FILE="$OUT_DIR/threshold_${PV_TRIMMED}_${MODEL_SLUG}_summary.json"
-      python "$ROOT/threshold_refine.py" \
+      run_or_skip "$OUT_FILE" python "$ROOT/threshold_refine.py" \
         --raw-data "$RAW_DATA" \
         --split test \
         --tau "$TAU" \
@@ -151,7 +173,7 @@ if ensure_ollama; then
         --prompt-variant "$PV_TRIMMED" \
         --output "$OUT_FILE"
 
-      python "$ROOT/evaluate.py" \
+      run_or_skip "$SUM_FILE" python "$ROOT/evaluate.py" \
         --raw-data "$RAW_DATA" \
         --split test \
         --tau "$TAU" --model-path "$MODEL_PATH" \
@@ -164,7 +186,7 @@ fi
 if [[ -n "${QWEN_MODEL_PATH:-}" ]]; then
   echo "=== Threshold-gated refinement with HF local Qwen (evidence prompt) ==="
   mkdir -p "$HF_OUT_DIR"
-  python "$ROOT/threshold_refine.py" \
+  run_or_skip "$HF_OUT_DIR/threshold_qwen_evidence.jsonl" python "$ROOT/threshold_refine.py" \
     --raw-data "$RAW_DATA" \
     --split test \
     --tau "$TAU" \
@@ -175,7 +197,7 @@ if [[ -n "${QWEN_MODEL_PATH:-}" ]]; then
     --device "${QWEN_DEVICE:-cpu}" \
     --output "$HF_OUT_DIR/threshold_qwen_evidence.jsonl"
 
-  python "$ROOT/evaluate.py" \
+  run_or_skip "$HF_OUT_DIR/threshold_qwen_evidence_summary.json" python "$ROOT/evaluate.py" \
     --raw-data "$RAW_DATA" \
     --split test \
     --tau "$TAU" --model-path "$MODEL_PATH" \
@@ -199,7 +221,7 @@ PY
     if [[ -n "$HUMAN_OUTPUTS" ]]; then
       HUMAN_ARGS+=(--outputs "$HUMAN_OUTPUTS")
     fi
-    python "$ROOT/human_eval.py" "${HUMAN_ARGS[@]}" --summary-out "$HUMAN_SUMMARY_OUT"
+    run_or_skip "$HUMAN_SUMMARY_OUT" python "$ROOT/human_eval.py" "${HUMAN_ARGS[@]}" --summary-out "$HUMAN_SUMMARY_OUT"
   else
     echo "Skipping human_eval.py because scipy is not installed."
   fi

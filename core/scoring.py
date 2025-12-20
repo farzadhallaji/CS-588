@@ -47,7 +47,7 @@ class CRScorer:
     Minimal CRScore-style scorer: SentenceTransformer embeddings + cosine sim.
     """
 
-    def __init__(self, model_path: str = "mixedbread-ai/mxbai-embed-large-v1", tau: float = 0.6):
+    def __init__(self, model_path: str = "mixedbread-ai/mxbai-embed-large-v1", tau: float = 0.7314):
         self.tau = tau
         self.sbert = SentenceTransformer(model_path)
 

@@ -31,14 +31,14 @@ def main() -> None:
     sample = splits["dev"][0]
 
     try:
-        scorer = CRScorer(tau=0.6)
+        scorer = CRScorer(tau=0.7314)
     except Exception as exc:  # pragma: no cover - sanity print for missing deps
         print(f"Dependency error: {exc}")
         print("Install deps via: pip install sentence-transformers torch")
         sys.exit(1)
 
     editor = TemplateEditor()
-    cfg = LoopConfig(max_iter=2, num_samples=1, tau=0.6, tau_evidence=0.35, max_sentence_change=0.7)
+    cfg = LoopConfig(max_iter=2, num_samples=1, tau=0.7314, tau_evidence=0.35, max_sentence_change=0.7)
     runner = IterativeRefiner(scorer, editor, cfg)
     result = runner.run(sample)
     print("Claims/pseudo-refs:", sample.pseudo_refs[:3])
