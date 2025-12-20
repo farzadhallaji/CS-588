@@ -167,3 +167,13 @@ Use the summarized numbers above or extract from:
 - Human phase2 evaluation was dropped (no overlapping rated ids for the systems/split). All reported metrics are CRScore-based.
 - Threshold runs include both seed and refined scores in JSONL; Rel improvements are computed only on triggered cases (Rel < 0.6 seeds).
 - All summaries use the test split only (120 instances). If you rerun with different splits or limits, regenerate analysis tables/plots. 
+
+## Safeguards and Limitations (hallucination/faithfulness)
+- **What we enforce automatically**: evidence guardrail (τ_evidence=0.35) blocks additions that are not semantically supported by diff/old-file snippets; the “evidence” prompt variant restricts additions to claim-supported points; threshold gating only rewrites low-quality seeds (Rel < 0.6) to avoid gratuitous edits.
+- **What we report**: CRScore metrics (Con/Comp/Rel) and improvement rates. High conciseness and targeted improvements suggest edits are not adding random content, but this is still an automated proxy.
+- **What is missing**: no human faithfulness/hallucination study for these runs; phase2 ratings do not overlap the current systems/split.
+- **Defensible phrasing**: “We use evidence guardrails and report precision-like (Con) and F1 (Rel) metrics; we did not run a dedicated human hallucination audit on these outputs.”
+- **Quick human spot-check (recommended if time permits)**:
+  1) Sample ~30 threshold-refined outputs across top prompt/model pairs (e.g., default/concise DeepSeek + Llama3).
+  2) Ask a rater to label each sentence as supported/unsupported by the claims/diff; mark any hallucinations.
+  3) Report the fraction of unsupported statements; if none or low, cite as a sanity check.
