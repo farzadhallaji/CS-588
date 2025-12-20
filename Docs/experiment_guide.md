@@ -38,7 +38,7 @@ All results are written to `results/` (or `results_hf/` for the HF threshold run
 - **Iterative rewrite**: `rewrite_loop.jsonl` + `rewrite_loop_summary.json`.
 - **Proposal v1 few-shot baseline (per model)**: `proposal_v1_<model>.jsonl` + `proposal_v1_<model>_summary.json`.
 - **Threshold-gated refinement (per model × prompt)**: `threshold_<prompt>_<model>.jsonl` + `threshold_<prompt>_<model>_summary.json`. Includes both seed and final Con/Comp/Rel plus an `improved` flag.
-- **HF threshold run (optional)**: `threshold_qwen_evidence.jsonl` + `_summary.json` in `results_hf/`.
+- **HF threshold run**: removed from pipeline; Qwen is covered via Ollama in the model sweep.
 
 ## Intended Tables/Figures (paper mapping)
 - **Main results table**: human seed vs iterative loop vs single-pass edit vs single-pass rewrite, reported on test split with Con/Comp/Rel; include human phase 2 stats if available.
@@ -52,7 +52,9 @@ All results are written to `results/` (or `results_hf/` for the HF threshold run
 - **Threshold runs** explicitly show both seed and post-refinement scores to quantify gains and improvement rate.
 - **Ablations** demonstrate the causal contribution of iteration, selection, evidence, and rewrite vs edit framing.
 
-Note: Phase2 human evaluation was dropped from the paper because the available ratings do not overlap the systems/split used here (zero paired ids). Include it only if new overlapping ratings are collected.
+Notes:
+- Phase2 human evaluation was dropped from the paper because the available ratings do not overlap the systems/split used here (zero paired ids). Include it only if new overlapping ratings are collected.
+- HF-local Qwen threshold run was removed; Qwen coverage now comes via the Ollama model sweep.
 
 ## Reproducibility Notes
 - The pipeline is idempotent: existing outputs are reused; delete a file to rerun that experiment.

@@ -183,30 +183,6 @@ if ensure_ollama; then
   done
 fi
 
-if [[ -n "${QWEN_MODEL_PATH:-}" ]]; then
-  echo "=== Threshold-gated refinement with HF local Qwen (evidence prompt) ==="
-  mkdir -p "$HF_OUT_DIR"
-  run_or_skip "$HF_OUT_DIR/threshold_qwen_evidence.jsonl" python "$ROOT/threshold_refine.py" \
-    --raw-data "$RAW_DATA" \
-    --split test \
-    --tau "$TAU" \
-    --threshold 0.6 \
-    --model-type hf-local \
-    --model-name "$QWEN_MODEL_PATH" \
-    --prompt-variant evidence \
-    --device "${QWEN_DEVICE:-cpu}" \
-    --output "$HF_OUT_DIR/threshold_qwen_evidence.jsonl"
-
-  run_or_skip "$HF_OUT_DIR/threshold_qwen_evidence_summary.json" python "$ROOT/evaluate.py" \
-    --raw-data "$RAW_DATA" \
-    --split test \
-    --tau "$TAU" --model-path "$MODEL_PATH" \
-    --outputs "$HF_OUT_DIR/threshold_qwen_evidence.jsonl" \
-    --summary-out "$HF_OUT_DIR/threshold_qwen_evidence_summary.json"
-else
-  echo "QWEN_MODEL_PATH not set; skipping HF local Qwen threshold experiment."
-fi
-
 echo "Phase2 human evaluation skipped (dropped from paper)."
 
 echo "All runs complete. Check summaries under $OUT_DIR and $HF_OUT_DIR."
