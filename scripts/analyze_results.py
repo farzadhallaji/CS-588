@@ -180,7 +180,7 @@ def plot_threshold_grid(path: Path, entries: List[Tuple[str, str, float]]):
     models = sorted({m for _, m, _ in entries})
     width = 0.18
     x = range(len(models))
-    plt.figure(figsize=(max(6, len(models) * 0.9), 4))
+    plt.figure(figsize=(max(7, len(models) * 1.0), 4.8))
     for i, prompt in enumerate(prompts):
         vals = []
         for m in models:
@@ -191,7 +191,7 @@ def plot_threshold_grid(path: Path, entries: List[Tuple[str, str, float]]):
     plt.xticks(list(x), models, rotation=30, ha="right")
     plt.ylabel("Rel")
     plt.title("Threshold refinement: Rel by model × prompt")
-    plt.legend()
+    plt.legend(title="Prompt", bbox_to_anchor=(1.02, 1), loc="upper left", borderaxespad=0)
     plt.tight_layout()
     plt.savefig(path)
     plt.close()
