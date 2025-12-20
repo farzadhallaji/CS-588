@@ -207,24 +207,6 @@ else
   echo "QWEN_MODEL_PATH not set; skipping HF local Qwen threshold experiment."
 fi
 
-if [[ "${SKIP_HUMAN_EVAL:-0}" != "1" ]]; then
-  echo "=== Phase2 human evaluation stats ==="
-  if python - <<'PY' >/dev/null 2>&1
-import importlib
-importlib.import_module("scipy.stats")
-PY
-  then
-    HUMAN_ARGS=(--raw-data "$RAW_DATA" --phase2-dir "$PHASE2_DIR" --split test --tau "$TAU" --model-path "$MODEL_PATH" --baseline-system "$HUMAN_BASELINE_SYSTEM" --target-system "$HUMAN_TARGET_SYSTEM")
-    if [[ -n "$HUMAN_CORR_SYSTEM" ]]; then
-      HUMAN_ARGS+=(--corr-system "$HUMAN_CORR_SYSTEM")
-    fi
-    if [[ -n "$HUMAN_OUTPUTS" ]]; then
-      HUMAN_ARGS+=(--outputs "$HUMAN_OUTPUTS")
-    fi
-    run_or_skip "$HUMAN_SUMMARY_OUT" python "$ROOT/human_eval.py" "${HUMAN_ARGS[@]}" --summary-out "$HUMAN_SUMMARY_OUT"
-  else
-    echo "Skipping human_eval.py because scipy is not installed."
-  fi
-fi
+echo "Phase2 human evaluation skipped (dropped from paper)."
 
 echo "All runs complete. Check summaries under $OUT_DIR and $HF_OUT_DIR."
