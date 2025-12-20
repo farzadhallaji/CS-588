@@ -5,6 +5,20 @@ This document consolidates the experiment design, systems, prompts, and empirica
 ## What the task is
 We start from human-written code reviews and a list of “claims” (pseudo-references) extracted from the code change. The goal is to improve the reviews so they cover important claims (recall), avoid irrelevant content (precision), and stay concise.
 
+## What the dataset contains
+- Source: CRScore human study phase 1.
+- Size: 300 total instances; test split used here: 120 (40 per language: Java, JS, Python).
+- Per instance fields:
+  - `index`: unique id within the dataset (integer).
+  - `lang`: programming language (`java`, `js`, or `py`).
+  - `id`: original project-specific identifier.
+  - `msg`: the “seed” human review — the raw review comment written by a human annotator before any model editing.
+  - `patch`: the code diff for the change.
+  - `oldf`: the original file content (used for evidence retrieval).
+  - `claims`: the pseudo-references (target facts the review should cover). Format varies:
+      - A string (claim text), or
+      - A pair/list where the second element is the claim text (e.g., `[claim_id, "claim text"]`).
+
 ## How quality is measured
 - **CRScore metrics**: Conciseness (Con, precision-like), Comprehensiveness (Comp, recall-like), and Relevance (Rel = F1 of Con/Comp). Higher is better.
 - **Similarity threshold τ**: 0.7314 (from the CRScore paper); a claim is “covered” if its best sentence match exceeds τ.
@@ -29,6 +43,51 @@ We start from human-written code reviews and a list of “claims” (pseudo-refe
 - **concise**: compress to 1–3 sentences; must mention the main change and one concrete test.
 - **evidence**: only add points directly supported by the claims; otherwise suggest a test.
 - **test-heavy**: focus on test coverage and failure modes (happy path + edge case).
+
+### Exact prompt texts (threshold refinement)
+- **default**  
+  ```
+  Improve the review to better match the claims.
+  Include missing important points, remove irrelevant content.
+  If a claim is uncertain, phrase it as a verification/test request.
+  Output only the revised review.
+  ```
+- **concise**  
+  ```
+  Rewrite the review into 1-3 sentences.
+  Must mention the main change and one concrete check/test.
+  Remove everything else.
+  Output only the revised review.
+  ```
+- **evidence**  
+  ```
+  Add ONLY points that are directly supported by the claims text.
+  If support is missing, do not add the point (suggest a test instead).
+  Keep it short and specific.
+  Output only the revised review.
+  ```
+- **test-heavy**  
+  ```
+  Focus on test coverage and failure modes implied by the claims.
+  Add 1-2 concrete tests (happy path + edge case).
+  Avoid restating obvious change details unless needed.
+  Output only the revised review.
+  ```
+
+### How each experiment runs (algorithm sketch)
+- **Offline/template loop (all ablations above)**  
+  1) Score the current review with CRScore to find uncovered claims (below τ) and low-similarity sentences.  
+  2) (For evidence-enabled variants) retrieve evidence snippets from the diff/old file; filter new sentences that lack semantic support (τ_evidence).  
+  3) Generate 2 template-based candidates (minimal edit or rewrite, depending on the variant).  
+  4) Score candidates; enforce constraints (length, precision drop, max change ratio).  
+  5) Select the best by objective (CRScore Rel penalized by length/copy) unless in `no_selection` (random). Repeat up to K iterations (K=3 unless K=1 in single_edit).
+- **Proposal v1 (few-shot baseline)**  
+  - Use mined “bad→good” pairs from the dev split.  
+  - Prompt a local LLM once with the current review and few-shots to produce an improved review (no iteration, no threshold gating).
+- **Threshold-gated refinement (Ollama models, prompts above)**  
+  1) Score the seed review; if Rel ≥ 0.6, keep it.  
+  2) If Rel < 0.6, build a prompt with the chosen variant and the claims; call the local LLM once.  
+  3) Keep the refined review; record both seed and final scores and whether improvement occurred.
 
 ## Data, Metrics, and Thresholds
 - **Dataset**: CRScore human study phase 1 (test split size: 120 instances; 40 per language: Java, JS, Python).
