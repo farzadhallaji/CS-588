@@ -28,7 +28,7 @@ HUMAN_TARGET_SYSTEM="${HUMAN_TARGET_SYSTEM:-gpt3.5_pred}"
 HUMAN_CORR_SYSTEM="${HUMAN_CORR_SYSTEM:-}"
 HUMAN_OUTPUTS="${HUMAN_OUTPUTS:-}"
 HUMAN_SUMMARY_OUT="${HUMAN_SUMMARY_OUT:-$OUT_DIR/human_eval_summary.json}"
-EXTRA_OLLAMA_MODELS="${EXTRA_OLLAMA_MODELS:-deepseek-coder:6.7b-base-q4_0,qwen2.5-coder:3b,qwen2.5-coder:7b}" # comma-separated
+EXTRA_OLLAMA_MODELS="${EXTRA_OLLAMA_MODELS:-deepseek-coder:6.7b-base-q4_0,qwen2.5-coder:7b}" # comma-separated; combined with OLLAMA_MODEL gives three defaults
 THRESHOLD_PROMPTS="${THRESHOLD_PROMPTS:-default,concise,evidence,test-heavy}"
 
 mkdir -p "$OUT_DIR"

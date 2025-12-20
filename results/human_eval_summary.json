@@ -1,0 +1,19 @@
+{
+  "split": "test",
+  "baseline_system": "msg",
+  "target_system": "gpt3.5_pred",
+  "correlation_system": "gpt3.5_pred",
+  "paired_count": 0,
+  "paired_delta_mean": null,
+  "wilcoxon": {
+    "statistic": null,
+    "pvalue": null,
+    "effect_size_r": null,
+    "n_effective": 0
+  },
+  "correlation": {
+    "count": 0,
+    "spearman": null,
+    "kendall": null
+  }
+}
