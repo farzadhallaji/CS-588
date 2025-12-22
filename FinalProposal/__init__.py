@@ -11,7 +11,7 @@ import sys
 
 # Allow importing ProposedApproach utilities (data loading, scoring, editors).
 ROOT = Path(__file__).resolve().parent
-PROPOSED_ROOT = ROOT.parent / "ProposedApproach"
+PROPOSED_ROOT = ROOT.parent
 if str(PROPOSED_ROOT) not in sys.path:
     sys.path.append(str(PROPOSED_ROOT))
 
