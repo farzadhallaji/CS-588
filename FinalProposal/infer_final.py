@@ -12,6 +12,7 @@ import json
 from pathlib import Path
 from typing import Dict, List
 import sys
+import numpy as np
 
 from . import PROPOSED_ROOT
 
@@ -26,7 +27,7 @@ from core.scoring import CRScorer  # type: ignore
 from core.utils import sentence_split  # type: ignore
 
 from .prompts import build_prompt, PROMPT_VARIANTS
-from .soft_crscore import embed_texts, soft_crscore
+from .soft_crscore import SoftCRScoreResult, embed_texts, soft_crscore
 from .evidence_penalty import collect_evidence, flatten_evidence_map, evidence_penalty
 from .reward import RewardWeights, compute_reward
 
@@ -53,6 +54,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--temp", type=float, default=0.05, help="SoftCRScore temperature.")
     parser.add_argument("--evidence-margin", type=float, default=0.35)
     parser.add_argument("--top-k-align", type=int, default=2)
+    parser.add_argument("--score-mode", choices=["soft", "hard"], default="soft")
     parser.add_argument("--w-rel", type=float, default=1.0)
     parser.add_argument("--w-unsupported", type=float, default=0.6)
     parser.add_argument("--w-len", type=float, default=0.02)
@@ -174,6 +176,25 @@ def generate_candidates(instances, args: argparse.Namespace, prompt_variants: Li
     return records
 
 
+def hard_to_soft(score, top_k: int) -> SoftCRScoreResult:
+    sim = score.sim_matrix.T  # sentences x claims
+    alignments: List[List[dict]] = []
+    for i in range(sim.shape[0]):
+        row = sim[i]
+        if row.size == 0:
+            alignments.append([])
+            continue
+        top_idx = np.argsort(-row)[: max(top_k, 1)]
+        alignments.append([{"claim_idx": int(j), "score": float(row[j])} for j in top_idx])
+    return SoftCRScoreResult(
+        soft_precision=score.conciseness,
+        soft_recall=score.comprehensiveness,
+        soft_f1=score.relevance,
+        alignments=alignments,
+        sim_matrix=sim,
+    )
+
+
 def score_and_select(rec: dict, scorer: CRScorer, args: argparse.Namespace, weights: RewardWeights) -> dict:
     claims = rec.get("claims", []) or []
     claim_embs = embed_texts(scorer.sbert, claims)
@@ -203,8 +224,12 @@ def score_and_select(rec: dict, scorer: CRScorer, args: argparse.Namespace, weig
     for cand in candidates:
         text = cand.get("text", "").strip() or seed
         sentences = sentence_split(text)
-        sent_embs = embed_texts(scorer.sbert, sentences)
-        soft_res = soft_crscore(sent_embs, claim_embs, tau=args.tau, temp=args.temp, top_k=args.top_k_align)
+        if args.score_mode == "hard":
+            hard = scorer.score(claims, text)
+            soft_res = hard_to_soft(hard, args.top_k_align)
+        else:
+            sent_embs = embed_texts(scorer.sbert, sentences)
+            soft_res = soft_crscore(sent_embs, claim_embs, tau=args.tau, temp=args.temp, top_k=args.top_k_align)
         evidence_res = evidence_penalty(scorer, sentences, evidence_lines, margin=args.evidence_margin)
         reward_bd = compute_reward(soft_res, evidence_res, text, claims, weights)
         alignments = []
