@@ -204,18 +204,24 @@ train_dpo_lora() {
     return
   fi
   mkdir -p "$out_dir"
-  run_or_skip "$sentinel" python "$ROOT/train_dpo_lora.py" \
-    --prefs "$prefs" \
-    --model-name "$model" \
-    --output-dir "$out_dir" \
-    --max-steps "${DPO_MAX_STEPS:-200}" \
-    --per-device-batch-size "${DPO_BATCH:-1}" \
-    --grad-accum "${DPO_GRAD_ACCUM:-4}" \
-    --learning-rate "${DPO_LR:-5e-5}" \
-    --lora-r "${DPO_LORA_R:-16}" \
-    --lora-alpha "${DPO_LORA_ALPHA:-32}" \
-    --lora-dropout "${DPO_LORA_DROPOUT:-0.05}" \
+  cmd=(
+    python "$ROOT/train_dpo_lora.py"
+    --prefs "$prefs"
+    --model-name "$model"
+    --output-dir "$out_dir"
+    --max-steps "${DPO_MAX_STEPS:-200}"
+    --per-device-batch-size "${DPO_BATCH:-1}"
+    --grad-accum "${DPO_GRAD_ACCUM:-4}"
+    --learning-rate "${DPO_LR:-5e-5}"
+    --lora-r "${DPO_LORA_R:-16}"
+    --lora-alpha "${DPO_LORA_ALPHA:-32}"
+    --lora-dropout "${DPO_LORA_DROPOUT:-0.05}"
     --beta "${DPO_BETA:-0.1}"
+  )
+  if [[ "${DPO_LOAD_IN_4BIT:-1}" == "1" ]]; then
+    cmd+=(--load-in-4bit)
+  fi
+  run_or_skip "$sentinel" "${cmd[@]}"
   echo "$out_dir"
 }
 
@@ -225,22 +231,29 @@ infer_lora() {
   local tag="$3"
   local select_file="$SEL_DIR/lora_${tag}__$(slug "$base_model").jsonl"
   local summary_file="$SUM_DIR/lora_summary_${tag}__$(slug "$base_model").json"
-  run_or_skip "$select_file" python -m FinalProposal.infer_final \
-    --mode generate \
-    --raw-data "$RAW_DATA" \
-    --split test \
-    --num-samples "${LORA_NUM_SAMPLES:-2}" \
-    --prompt-variants "$PROMPTS" \
-    --model-type lora \
-    --model-name "$base_model" \
-    --lora-base "$base_model" \
-    --lora-path "$lora_path" \
-    --temperature "${LORA_TEMPERATURE:-0.3}" \
-    --model-path "$MODEL_PATH" \
-    --tau "$TAU" \
-    --temp "${LORA_SOFT_TEMP:-0.05}" \
-    --score-mode "${LORA_SCORE_MODE:-soft}" \
+  cmd=(
+    python -m FinalProposal.infer_final
+    --mode generate
+    --raw-data "$RAW_DATA"
+    --split test
+    --num-samples "${LORA_NUM_SAMPLES:-2}"
+    --prompt-variants "$PROMPTS"
+    --model-type lora
+    --model-name "$base_model"
+    --lora-base "$base_model"
+    --lora-path "$lora_path"
+    --temperature "${LORA_TEMPERATURE:-0.3}"
+    --device "${LORA_DEVICE:-auto}"
+    --model-path "$MODEL_PATH"
+    --tau "$TAU"
+    --temp "${LORA_SOFT_TEMP:-0.05}"
+    --score-mode "${LORA_SCORE_MODE:-soft}"
     --output "$select_file"
+  )
+  if [[ "${LORA_LOAD_IN_4BIT:-1}" == "1" ]]; then
+    cmd+=(--load-in-4bit)
+  fi
+  run_or_skip "$select_file" "${cmd[@]}"
 
   run_or_skip "$summary_file" python "$ROOT/../evaluate.py" \
     --raw-data "$RAW_DATA" \
@@ -338,6 +351,7 @@ else
 fi
 
 echo "=== Optional: DPO LoRA (set DPO_MODELS to enable) ==="
+DPO_MODELS="${DPO_MODELS:-Qwen/Qwen2.5-1.8B-Instruct}"
 if [[ -n "${DPO_MODELS:-}" ]]; then
   if check_dpo_deps; then
     IFS=',' read -r -a DPO_MODEL_LIST <<<"$DPO_MODELS"

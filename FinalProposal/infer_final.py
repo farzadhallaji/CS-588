@@ -49,6 +49,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--top-p", type=float, default=0.9)
     parser.add_argument("--max-new-tokens", type=int, default=192)
     parser.add_argument("--device", type=str, default="cpu")
+    parser.add_argument("--load-in-4bit", action="store_true", help="Load HF base in 4-bit (LoRA).")
     parser.add_argument("--model-path", type=str, default="mixedbread-ai/mxbai-embed-large-v1", help="SentenceTransformer model for scoring.")
     parser.add_argument("--tau", type=float, default=LoopConfig.tau, help="CRScore threshold; keep consistent with evaluate/human_eval.")
     parser.add_argument("--temp", type=float, default=0.05, help="SoftCRScore temperature.")
@@ -89,7 +90,11 @@ def choose_editor(args: argparse.Namespace) -> BaseEditor:
         except ImportError as exc:  # pragma: no cover - optional dependency
             raise RuntimeError("Install transformers + peft to use --model-type lora.") from exc
         base_model = args.lora_base or args.model_name
-        model = AutoModelForCausalLM.from_pretrained(base_model, device_map="auto" if args.device != "cpu" else None)
+        model = AutoModelForCausalLM.from_pretrained(
+            base_model,
+            load_in_4bit=args.load_in_4bit,
+            device_map="auto" if args.device != "cpu" else None,
+        )
         model = PeftModel.from_pretrained(model, args.lora_path or base_model)
         tok = AutoTokenizer.from_pretrained(base_model)
         if tok.pad_token_id is None:
