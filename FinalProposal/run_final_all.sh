@@ -24,6 +24,7 @@ PREF_DIR="${PREF_DIR:-$OUT_DIR/preferences}"
 ROBUST_DIR="${ROBUST_DIR:-$OUT_DIR/robustness}"
 LORA_DIR="${LORA_DIR:-$OUT_DIR/lora}"
 SYSTEM_B="${SYSTEM_B:-}" # optional: export human overlap vs another system output
+OLLAMA_STARTED=0
 
 mkdir -p "$OUT_DIR" "$CAND_DIR" "$SEL_DIR" "$SUM_DIR" "$PREF_DIR" "$ROBUST_DIR" "$LORA_DIR"
 export PYTHONPATH="$ROOT/..:${PYTHONPATH:-}"
@@ -40,6 +41,7 @@ ensure_ollama() {
     echo "Starting ollama serve in background (logs: /tmp/ollama-serve.log)..."
     nohup ollama serve >/tmp/ollama-serve.log 2>&1 &
     sleep 3
+    OLLAMA_STARTED=1
   else
     echo "ollama serve already running."
   fi
@@ -48,6 +50,19 @@ ensure_ollama() {
     exit 1
   fi
 }
+
+cleanup_ollama() {
+  if [[ "$MODEL_TYPE" != "ollama" ]]; then
+    return
+  fi
+  # Only stop the server if we started it in this script to free GPU memory.
+  if [[ "$OLLAMA_STARTED" == "1" ]]; then
+    echo "Stopping ollama serve to free GPU resources..."
+    pkill -f "ollama serve" >/dev/null 2>&1 || true
+  fi
+}
+
+trap cleanup_ollama EXIT
 
 run_or_skip() {
   local target="$1"
