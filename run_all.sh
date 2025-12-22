@@ -183,6 +183,4 @@ if ensure_ollama; then
   done
 fi
 
-echo "Phase2 human evaluation skipped (dropped from paper)."
-
 echo "All runs complete. Check summaries under $OUT_DIR and $HF_OUT_DIR."
