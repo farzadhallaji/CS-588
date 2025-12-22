@@ -53,10 +53,10 @@ run_or_skip() {
   local target="$1"
   shift
   if [[ -s "$target" ]]; then
-    echo "Skipping; found $target"
+    echo "Skipping; found $target" >&2
     return 0
   fi
-  echo "Running: $*"
+  echo "Running: $*" >&2
   "$@"
 }
 
@@ -112,13 +112,15 @@ select_and_eval() {
     --len-norm "$len_norm" \
     --output "$select_file"
 
+  # Suppress stdout from evaluate to keep function return clean; summary is written to file.
   run_or_skip "$summary_file" python "$ROOT/../evaluate.py" \
     --raw-data "$RAW_DATA" \
     --split test \
     --tau "$tau_val" \
     --model-path "$MODEL_PATH" \
     --outputs "$select_file" \
-    --summary-out "$summary_file"
+    --summary-out "$summary_file" \
+    >/dev/null
 
   echo "$select_file"
 }
@@ -261,7 +263,8 @@ infer_lora() {
     --tau "$TAU" \
     --model-path "$MODEL_PATH" \
     --outputs "$select_file" \
-    --summary-out "$summary_file"
+    --summary-out "$summary_file" \
+    >/dev/null
 
   run_robustness "$select_file" "lora_${tag}__$(slug "$base_model")" "$TAU"
 }
