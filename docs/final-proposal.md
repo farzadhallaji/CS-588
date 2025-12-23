@@ -70,7 +70,7 @@ Exact prompt texts (what the model sees before the review/claims block):
 - Selection: score mode (soft or hard threshold), similarity threshold, penalty weights (unsupported/length/copy), selection temperature, target length, alignment depth, evidence margin.
 - Data: which split and how many items to process; which embedding model to use.
 
-## Experiments/ablations that were run (per run_final_all.sh)
+## Experiments/ablations that were run (per run_reward_rerank.sh)
 - Base: `num_samples=2`, `temperature=0.3`, prompts=`default,evidence_grounded,test_heavy,concise`, model `llama3:8b-instruct-q4_0`, reward config `reward_default` (soft + penalties).
 - Generation ablations:
   - Temps: `temp02` (0.2), `temp06` (0.6).

@@ -25,6 +25,7 @@ from core.data import ReviewInstance, build_instances, load_raw_data, split_by_l
 from core.scoring import CRScorer
 from core.editors import HFLocalEditor, OllamaEditor
 from core.loop import LoopConfig, BASE_SYSTEM_PROMPT
+from core.checks import expected_instances, should_skip_output
 
 
 PROMPTS: Dict[str, str] = {
@@ -94,11 +95,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-new-tokens", type=int, default=160)
     parser.add_argument("--device", type=str, default="cpu")
     parser.add_argument("--output", type=Path, default=Path(__file__).resolve().parent / "results" / "threshold_refine.jsonl")
+    parser.add_argument("--expected-count", type=int, default=None, help="Override expected number of rows; defaults to dataset split size (after limit).")
+    parser.add_argument("--force", action="store_true", help="Do not skip even if output already complete.")
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
+    expected = args.expected_count or expected_instances(args.raw_data, args.split, limit=args.limit)
+    if should_skip_output(args.output, expected, args.force, label="threshold_refine output"):
+        return
     records = load_raw_data(args.raw_data)
     instances = build_instances(records)
     splits = split_by_language(instances)

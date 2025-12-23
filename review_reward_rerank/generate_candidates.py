@@ -20,6 +20,7 @@ from core.data import build_instances, load_raw_data, split_by_language  # type:
 from core.editors import HFLocalEditor, OllamaEditor, EchoEditor  # type: ignore
 from core.evidence import EvidenceRetriever  # type: ignore
 from core.loop import LoopConfig  # type: ignore
+from core.checks import expected_instances, should_skip_output  # type: ignore
 
 from .prompts import build_prompt, PROMPT_VARIANTS
 
@@ -58,11 +59,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--device", type=str, default="cpu")
     parser.add_argument("--tau", type=float, default=LoopConfig.tau, help="Stored for downstream scoring consistency.")
     parser.add_argument("--output", type=Path, default=Path(__file__).resolve().parent / "results" / "candidates.jsonl")
+    parser.add_argument("--expected-count", type=int, default=None, help="Override expected number of rows; defaults to dataset split size (after limit/lang).")
+    parser.add_argument("--force", action="store_true", help="Do not skip even if output already complete.")
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
+    expected = args.expected_count or expected_instances(args.raw_data, args.split, limit=args.limit)
+    if should_skip_output(args.output, expected, args.force, label="candidates output"):
+        return
     prompt_variants = [p.strip() for p in args.prompt_variants.split(",") if p.strip()]
     for pv in prompt_variants:
         if pv not in PROMPT_VARIANTS:

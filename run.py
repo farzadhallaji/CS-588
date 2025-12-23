@@ -19,6 +19,7 @@ from core.data import build_instances, load_raw_data, split_by_language
 from core.editors import EchoEditor, HFLocalEditor, OllamaEditor, TemplateEditor
 from core.loop import IterativeRefiner, LoopConfig, BASE_SYSTEM_PROMPT, LOOP_INSTRUCTIONS
 from core.scoring import CRScorer
+from core.checks import expected_instances, should_skip_output
 
 
 def parse_args() -> argparse.Namespace:
@@ -54,6 +55,8 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="Override system prompt for LLM editors (ollama / hf-local).",
     )
+    parser.add_argument("--expected-count", type=int, default=None, help="Override expected number of rows; defaults to dataset split size (after lang/limit).")
+    parser.add_argument("--force", action="store_true", help="Do not skip even if output already complete.")
     return parser.parse_args()
 
 
@@ -102,6 +105,9 @@ def config_from_args(args: argparse.Namespace) -> LoopConfig:
 def main() -> None:
     random.seed(0)
     args = parse_args()
+    expected = args.expected_count or expected_instances(args.raw_data, args.split, args.lang, args.limit)
+    if should_skip_output(args.output, expected, args.force, label="iterative loop output"):
+        return
     records = load_raw_data(args.raw_data)
     instances = build_instances(records)
     splits = split_by_language(instances)

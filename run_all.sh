@@ -9,6 +9,7 @@ export PYTHONPATH="$ROOT:${PYTHONPATH:-}"
 
 # Shared defaults
 RAW_DATA="${RAW_DATA:-$ROOT/../CRScore/human_study/phase1/raw_data.json}"
+SPLIT="${SPLIT:-all}" # dev|test|all
 MODEL_PATH="${MODEL_PATH:-mixedbread-ai/mxbai-embed-large-v1}"
 TAU="${TAU:-0.7314}"
 TAU_EVIDENCE="${TAU_EVIDENCE:-0.35}"
@@ -19,8 +20,8 @@ THRESHOLD_PROMPTS="${THRESHOLD_PROMPTS:-default,concise,evidence,test-heavy}"
 
 # Output roots
 OUT_DIR="${OUT_DIR:-$ROOT/results}"
-BASE_OUT="${BASE_OUT:-$OUT_DIR/baseline}"
-RERANK_OUT="${RERANK_OUT:-$OUT_DIR/reward_rerank}"
+BASE_OUT="${BASE_OUT:-$OUT_DIR/$SPLIT/baseline}"
+RERANK_OUT="${RERANK_OUT:-$OUT_DIR/$SPLIT/reward_rerank}"
 HF_OUT_DIR="${HF_OUT_DIR:-$ROOT/results_hf}"
 
 # Baseline/proposal outputs
@@ -91,79 +92,32 @@ slug() {
   echo "$1" | tr '/:' '__' | tr ' ' '_' | tr '[:upper:]' '[:lower:]'
 }
 
-count_lines() {
-  local file="$1"
-  if [[ -s "$file" ]]; then
-    python - "$file" <<'PY'
-from pathlib import Path
-import sys
-p = Path(sys.argv[1])
-print(sum(1 for _ in p.open()))
-PY
-  else
-    echo "0"
-  fi
-}
-
-# Skip only when the JSONL has the expected number of rows; rerun if incomplete.
-run_or_complete_jsonl() {
-  local target="$1"
-  local expected="$2"
-  shift 2
-  if [[ -n "$expected" && "$expected" != "0" && -s "$target" ]]; then
-    local lines
-    lines=$(count_lines "$target")
-    if [[ "$lines" -ge "$expected" ]]; then
-      echo "Skipping; found $lines/$expected rows in $target"
-      return 0
-    else
-      echo "Incomplete ($lines/$expected) -> rerunning: $*"
-    fi
-  elif [[ -s "$target" ]]; then
-    echo "Skipping; found $target"
-    return 0
-  fi
-  echo "Running: $*"
-  "$@"
-}
-
 # ---------------- Baselines + proposal v1 + threshold sweep ----------------
 echo "=== Freeze deterministic dev/test split ==="
 run_or_skip "$SPLITS_OUT" python "$ROOT/scripts/make_splits.py" --raw-data "$RAW_DATA" --out "$SPLITS_OUT"
-
-EXPECTED_TEST_COUNT=""
-if [[ -s "$SPLITS_OUT" ]]; then
-  EXPECTED_TEST_COUNT=$(python - "$SPLITS_OUT" <<'PY'
-import json, sys
-with open(sys.argv[1]) as fh:
-    data = json.load(fh)
-print(len(data.get("test", [])))
-PY
-)
-fi
 
 
 echo "=== Build few-shot pairs for proposal v1 baseline ==="
 run_or_skip "$FEWSHOT_OUT" python "$ROOT/scripts/build_fewshot_pairs.py" --raw-data "$RAW_DATA" --tau "$TAU" --model-path "$MODEL_PATH" --out "$FEWSHOT_OUT"
 
 echo "=== Baseline (human seed) ==="
-run_or_skip "$BASE_OUT/baseline_summary.json" python "$ROOT/evaluate.py" --raw-data "$RAW_DATA" --split test --tau "$TAU" --model-path "$MODEL_PATH" --baseline-only --summary-out "$BASE_OUT/baseline_summary.json"
+run_or_skip "$BASE_OUT/baseline_summary.json" python "$ROOT/evaluate.py" --raw-data "$RAW_DATA" --split "$SPLIT" --tau "$TAU" --model-path "$MODEL_PATH" --baseline-only --summary-out "$BASE_OUT/baseline_summary.json"
 
 echo "=== Main loop + ablations (template editor) ==="
-run_or_complete_jsonl "$BASE_OUT/loop.jsonl" "$EXPECTED_TEST_COUNT" python "$ROOT/run.py" --raw-data "$RAW_DATA" --split test --mode loop --model-path "$MODEL_PATH" --tau "$TAU" --tau-evidence "$TAU_EVIDENCE" --max-change "$MAX_CHANGE" --output "$BASE_OUT/loop.jsonl"
-run_or_complete_jsonl "$BASE_OUT/single_edit.jsonl" "$EXPECTED_TEST_COUNT" python "$ROOT/run.py" --raw-data "$RAW_DATA" --split test --mode k1 --model-path "$MODEL_PATH" --tau "$TAU" --tau-evidence "$TAU_EVIDENCE" --max-change "$MAX_CHANGE" --output "$BASE_OUT/single_edit.jsonl"
-run_or_complete_jsonl "$BASE_OUT/single_rewrite.jsonl" "$EXPECTED_TEST_COUNT" python "$ROOT/run.py" --raw-data "$RAW_DATA" --split test --mode rewrite --max-iter 1 --model-path "$MODEL_PATH" --tau "$TAU" --tau-evidence "$TAU_EVIDENCE" --max-change 1.0 --output "$BASE_OUT/single_rewrite.jsonl"
-run_or_complete_jsonl "$BASE_OUT/no_selection.jsonl" "$EXPECTED_TEST_COUNT" python "$ROOT/run.py" --raw-data "$RAW_DATA" --split test --mode no-selection --model-path "$MODEL_PATH" --tau "$TAU" --tau-evidence "$TAU_EVIDENCE" --max-change "$MAX_CHANGE" --output "$BASE_OUT/no_selection.jsonl"
-run_or_complete_jsonl "$BASE_OUT/no_evidence.jsonl" "$EXPECTED_TEST_COUNT" python "$ROOT/run.py" --raw-data "$RAW_DATA" --split test --mode no-evidence --model-path "$MODEL_PATH" --tau "$TAU" --tau-evidence "$TAU_EVIDENCE" --max-change "$MAX_CHANGE" --output "$BASE_OUT/no_evidence.jsonl"
-run_or_complete_jsonl "$BASE_OUT/rewrite_loop.jsonl" "$EXPECTED_TEST_COUNT" python "$ROOT/run.py" --raw-data "$RAW_DATA" --split test --mode rewrite --model-path "$MODEL_PATH" --tau "$TAU" --tau-evidence "$TAU_EVIDENCE" --max-change 1.0 --output "$BASE_OUT/rewrite_loop.jsonl"
+run_or_skip "$BASE_OUT/loop.jsonl" python "$ROOT/run.py" --raw-data "$RAW_DATA" --split "$SPLIT" --mode loop --model-path "$MODEL_PATH" --tau "$TAU" --tau-evidence "$TAU_EVIDENCE" --max-change "$MAX_CHANGE" --output "$BASE_OUT/loop.jsonl"
+run_or_skip "$BASE_OUT/single_edit.jsonl" python "$ROOT/run.py" --raw-data "$RAW_DATA" --split "$SPLIT" --mode k1 --model-path "$MODEL_PATH" --tau "$TAU" --tau-evidence "$TAU_EVIDENCE" --max-change "$MAX_CHANGE" --output "$BASE_OUT/single_edit.jsonl"
+run_or_skip "$BASE_OUT/single_rewrite.jsonl" python "$ROOT/run.py" --raw-data "$RAW_DATA" --split "$SPLIT" --mode rewrite --max-iter 1 --model-path "$MODEL_PATH" --tau "$TAU" --tau-evidence "$TAU_EVIDENCE" --max-change 1.0 --output "$BASE_OUT/single_rewrite.jsonl"
+run_or_skip "$BASE_OUT/no_selection.jsonl" python "$ROOT/run.py" --raw-data "$RAW_DATA" --split "$SPLIT" --mode no-selection --model-path "$MODEL_PATH" --tau "$TAU" --tau-evidence "$TAU_EVIDENCE" --max-change "$MAX_CHANGE" --output "$BASE_OUT/no_selection.jsonl"
+run_or_skip "$BASE_OUT/no_evidence.jsonl" python "$ROOT/run.py" --raw-data "$RAW_DATA" --split "$SPLIT" --mode no-evidence --model-path "$MODEL_PATH" --tau "$TAU" --tau-evidence "$TAU_EVIDENCE" --max-change "$MAX_CHANGE" --output "$BASE_OUT/no_evidence.jsonl"
+run_or_skip "$BASE_OUT/rewrite_loop.jsonl" python "$ROOT/run.py" --raw-data "$RAW_DATA" --split "$SPLIT" --mode rewrite --model-path "$MODEL_PATH" --tau "$TAU" --tau-evidence "$TAU_EVIDENCE" --max-change 1.0 --output "$BASE_OUT/rewrite_loop.jsonl"
 
 echo "=== Evaluate loop outputs ==="
-run_or_skip "$BASE_OUT/loop_summary.json" python "$ROOT/evaluate.py" --raw-data "$RAW_DATA" --split test --tau "$TAU" --model-path "$MODEL_PATH" --outputs "$BASE_OUT/loop.jsonl" --summary-out "$BASE_OUT/loop_summary.json"
-run_or_skip "$BASE_OUT/single_edit_summary.json" python "$ROOT/evaluate.py" --raw-data "$RAW_DATA" --split test --tau "$TAU" --model-path "$MODEL_PATH" --outputs "$BASE_OUT/single_edit.jsonl" --summary-out "$BASE_OUT/single_edit_summary.json"
-run_or_skip "$BASE_OUT/single_rewrite_summary.json" python "$ROOT/evaluate.py" --raw-data "$RAW_DATA" --split test --tau "$TAU" --model-path "$MODEL_PATH" --outputs "$BASE_OUT/single_rewrite.jsonl" --summary-out "$BASE_OUT/single_rewrite_summary.json"
-run_or_skip "$BASE_OUT/no_selection_summary.json" python "$ROOT/evaluate.py" --raw-data "$RAW_DATA" --split test --tau "$TAU" --model-path "$MODEL_PATH" --outputs "$BASE_OUT/no_selection.jsonl" --summary-out "$BASE_OUT/no_selection_summary.json"
-run_or_skip "$BASE_OUT/no_evidence_summary.json" python "$ROOT/evaluate.py" --raw-data "$RAW_DATA" --split test --tau "$TAU" --model-path "$MODEL_PATH" --outputs "$BASE_OUT/no_evidence.jsonl" --summary-out "$BASE_OUT/no_evidence_summary.json"
-run_or_skip "$BASE_OUT/rewrite_loop_summary.json" python "$ROOT/evaluate.py" --raw-data "$RAW_DATA" --split test --tau "$TAU" --model-path "$MODEL_PATH" --outputs "$BASE_OUT/rewrite_loop.jsonl" --summary-out "$BASE_OUT/rewrite_loop_summary.json"
+run_or_skip "$BASE_OUT/loop_summary.json" python "$ROOT/evaluate.py" --raw-data "$RAW_DATA" --split "$SPLIT" --tau "$TAU" --model-path "$MODEL_PATH" --outputs "$BASE_OUT/loop.jsonl" --summary-out "$BASE_OUT/loop_summary.json"
+run_or_skip "$BASE_OUT/single_edit_summary.json" python "$ROOT/evaluate.py" --raw-data "$RAW_DATA" --split "$SPLIT" --tau "$TAU" --model-path "$MODEL_PATH" --outputs "$BASE_OUT/single_edit.jsonl" --summary-out "$BASE_OUT/single_edit_summary.json"
+run_or_skip "$BASE_OUT/single_rewrite_summary.json" python "$ROOT/evaluate.py" --raw-data "$RAW_DATA" --split "$SPLIT" --tau "$TAU" --model-path "$MODEL_PATH" --outputs "$BASE_OUT/single_rewrite.jsonl" --summary-out "$BASE_OUT/single_rewrite_summary.json"
+run_or_skip "$BASE_OUT/no_selection_summary.json" python "$ROOT/evaluate.py" --raw-data "$RAW_DATA" --split "$SPLIT" --tau "$TAU" --model-path "$MODEL_PATH" --outputs "$BASE_OUT/no_selection.jsonl" --summary-out "$BASE_OUT/no_selection_summary.json"
+run_or_skip "$BASE_OUT/no_evidence_summary.json" python "$ROOT/evaluate.py" --raw-data "$RAW_DATA" --split "$SPLIT" --tau "$TAU" --model-path "$MODEL_PATH" --outputs "$BASE_OUT/no_evidence.jsonl" --summary-out "$BASE_OUT/no_evidence_summary.json"
+run_or_skip "$BASE_OUT/rewrite_loop_summary.json" python "$ROOT/evaluate.py" --raw-data "$RAW_DATA" --split "$SPLIT" --tau "$TAU" --model-path "$MODEL_PATH" --outputs "$BASE_OUT/rewrite_loop.jsonl" --summary-out "$BASE_OUT/rewrite_loop_summary.json"
 
 echo "=== Proposal v1 few-shot baseline (Ollama sweep) ==="
 if ensure_ollama; then
@@ -181,9 +135,9 @@ if ensure_ollama; then
     MODEL_SLUG=$(slug "$MODEL_TRIMMED")
     OUT_FILE="$BASE_OUT/proposal_v1_${MODEL_SLUG}.jsonl"
     SUM_FILE="$BASE_OUT/proposal_v1_${MODEL_SLUG}_summary.json"
-    run_or_complete_jsonl "$OUT_FILE" "$EXPECTED_TEST_COUNT" python "$ROOT/proposal_v1.py" \
+    run_or_skip "$OUT_FILE" python "$ROOT/proposal_v1.py" \
       --raw-data "$RAW_DATA" \
-      --split test \
+      --split "$SPLIT" \
       --tau "$TAU" \
       --model-path "$MODEL_PATH" \
       --fewshot "$FEWSHOT_OUT" \
@@ -220,9 +174,9 @@ if ensure_ollama; then
       [[ -z "$PV_TRIMMED" ]] && continue
       OUT_FILE="$BASE_OUT/threshold_${PV_TRIMMED}_${MODEL_SLUG}.jsonl"
       SUM_FILE="$BASE_OUT/threshold_${PV_TRIMMED}_${MODEL_SLUG}_summary.json"
-      run_or_complete_jsonl "$OUT_FILE" "$EXPECTED_TEST_COUNT" python "$ROOT/threshold_refine.py" \
+      run_or_skip "$OUT_FILE" python "$ROOT/threshold_refine.py" \
         --raw-data "$RAW_DATA" \
-        --split test \
+        --split "$SPLIT" \
         --tau "$TAU" \
         --threshold 0.6 \
         --model-type ollama \
@@ -274,7 +228,7 @@ select_and_eval() {
   done
   local select_file="$RERANK_SEL_DIR/selected_${cand_tag}__${name}.jsonl"
   local summary_file="$RERANK_SUM_DIR/summary_${cand_tag}__${name}.json"
-  run_or_complete_jsonl "$select_file" "$EXPECTED_TEST_COUNT" python -m review_reward_rerank.select_best \
+  run_or_skip "$select_file" python -m review_reward_rerank.select_best \
     --candidates "$cand_file" \
     --tau "$tau_val" \
     --temp "$temp" \
@@ -291,7 +245,7 @@ select_and_eval() {
 
   run_or_skip "$summary_file" python "$ROOT/evaluate.py" \
     --raw-data "$RAW_DATA" \
-    --split test \
+    --split "$SPLIT" \
     --tau "$tau_val" \
     --model-path "$MODEL_PATH" \
     --outputs "$select_file" \

@@ -17,6 +17,7 @@ from core.data import build_instances, load_raw_data, split_by_language
 from core.scoring import CRScorer
 from core.editors import OllamaEditor
 from core.loop import BASE_SYSTEM_PROMPT
+from core.checks import expected_instances, should_skip_output
 
 
 def build_prompt(pairs, score_dict, diff: str, review: str) -> str:
@@ -82,11 +83,16 @@ def parse_args() -> argparse.Namespace:
         help="Where to write baseline outputs.",
     )
     parser.add_argument("--ollama-model", type=str, default="llama3:8b-instruct-q4_0")
+    parser.add_argument("--expected-count", type=int, default=None, help="Override expected number of rows; defaults to dataset split size.")
+    parser.add_argument("--force", action="store_true", help="Do not skip even if output already complete.")
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
+    expected = args.expected_count or expected_instances(args.raw_data, args.split)
+    if should_skip_output(args.out, expected, args.force, label="proposal_v1 output"):
+        return
     if not args.fewshot.exists():
         raise FileNotFoundError(f"Missing few-shot pairs: {args.fewshot}. Run scripts/build_fewshot_pairs.py first.")
     pairs = json.loads(args.fewshot.read_text())

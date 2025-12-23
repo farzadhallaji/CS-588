@@ -19,6 +19,7 @@ if str(PROPOSED_ROOT) not in sys.path:
 
 from core.scoring import CRScorer, ScoreResult  # type: ignore
 from core.utils import sentence_split  # type: ignore
+from core.checks import count_lines, should_skip_output  # type: ignore
 
 from .soft_crscore import SoftCRScoreResult, embed_texts, soft_crscore
 from .evidence_penalty import collect_evidence, flatten_evidence_map, evidence_penalty
@@ -41,6 +42,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--w-copy", type=float, default=0.15)
     parser.add_argument("--len-norm", type=int, default=400)
     parser.add_argument("--output", type=Path, default=Path(__file__).resolve().parent / "results" / "selected.jsonl")
+    parser.add_argument("--expected-count", type=int, default=None, help="Override expected number of rows; defaults to candidates line count (after limit).")
+    parser.add_argument("--force", action="store_true", help="Do not skip even if output already complete.")
     return parser.parse_args()
 
 
@@ -96,6 +99,12 @@ def score_candidate(
 
 def main() -> None:
     args = parse_args()
+    expected = args.expected_count
+    if expected is None:
+        cand_lines = count_lines(args.candidates)
+        expected = cand_lines if args.limit is None else min(cand_lines, args.limit)
+    if should_skip_output(args.output, expected, args.force, label="selection output"):
+        return
     weights = RewardWeights(
         w_rel=args.w_rel,
         w_unsupported=args.w_unsupported,
