@@ -1,5 +1,5 @@
 """
-Prompt bank for FinalProposal experiments.
+Prompt bank for review_reward_rerank experiments.
 
 Templates are plain Python strings with simple `.format()` placeholders.
 Inputs:

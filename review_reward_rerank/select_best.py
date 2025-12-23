@@ -29,7 +29,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Select best review candidate with SoftCRScore + evidence penalty.")
     parser.add_argument("--candidates", type=Path, required=True, help="Path to candidates JSONL from generate_candidates.py")
     parser.add_argument("--model-path", type=str, default="mixedbread-ai/mxbai-embed-large-v1", help="SentenceTransformer model.")
-    parser.add_argument("--tau", type=float, default=0.7314, help="CRScore threshold; keep consistent with evaluate.py/human_eval.py.")
+    parser.add_argument("--tau", type=float, default=0.7314, help="CRScore threshold; keep consistent with evaluate.py.")
     parser.add_argument("--temp", type=float, default=0.05, help="SoftCRScore temperature.")
     parser.add_argument("--evidence-margin", type=float, default=0.35, help="Similarity margin below which a sentence is unsupported.")
     parser.add_argument("--top-k-align", type=int, default=2, help="Top-k claim alignments to keep per sentence.")

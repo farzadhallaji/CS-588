@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# FinalProposal end-to-end runner with ablations + resumability.
+# Reward-rerank end-to-end runner with ablations + resumability.
 # Produces:
 # - Reward rerank baseline (candidates -> select -> evaluate -> robustness)
 # - Generation ablations (prompt variants, N samples, temperature)
@@ -79,7 +79,7 @@ gen_candidates() {
     eval "$k=\"$v\""
   done
   local cand_file="$CAND_DIR/candidates_${name}.jsonl"
-  run_or_skip "$cand_file" python -m FinalProposal.generate_candidates \
+  run_or_skip "$cand_file" python -m review_reward_rerank.generate_candidates \
     --raw-data "$RAW_DATA" \
     --split test \
     --tau "$TAU" \
@@ -104,7 +104,7 @@ select_and_eval() {
   done
   local select_file="$SEL_DIR/selected_${cand_tag}__${name}.jsonl"
   local summary_file="$SUM_DIR/summary_${cand_tag}__${name}.json"
-  run_or_skip "$select_file" python -m FinalProposal.select_best \
+  run_or_skip "$select_file" python -m review_reward_rerank.select_best \
     --candidates "$cand_file" \
     --tau "$tau_val" \
     --temp "$temp" \
@@ -137,7 +137,7 @@ run_robustness() {
   local tag="$2"
   local tau_val="${3:-$TAU}"
   local rob_file="$ROBUST_DIR/robust_${tag}.csv"
-  run_or_skip "$rob_file" python -m FinalProposal.robustness_suite \
+  run_or_skip "$rob_file" python -m review_reward_rerank.robustness_suite \
     --outputs "$select_file" \
     --raw-data "$RAW_DATA" \
     --tau "$tau_val" \
@@ -174,7 +174,7 @@ SCORE_ABLATIONS=(
 
 ensure_ollama
 
-echo "=== Base FinalProposal reward rerank run ==="
+echo "=== Base reward rerank run ==="
 BASE_CAND_FILE=$(gen_candidates "$BASE_GEN_CFG")
 BASE_SELECT_FILE=$(select_and_eval "$BASE_CAND_FILE" "base" "$BASE_SCORE_CFG")
 run_robustness "$BASE_SELECT_FILE" "base__reward_default" "$TAU"
@@ -218,4 +218,4 @@ if [[ -s "$LOOP_OUTPUT" ]]; then
   run_robustness "$LOOP_OUTPUT" "iterative_loop_baseline" "$TAU"
 fi
 
-echo "All FinalProposal runs finished. Outputs under $OUT_DIR"
+echo "All reward-rerank runs finished. Outputs under $OUT_DIR"

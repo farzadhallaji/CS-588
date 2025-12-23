@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Quick analysis/plotting helper for FinalProposal results.
+Quick analysis/plotting helper for review_reward_rerank results.
 
 Reads all summary JSONs and robustness CSVs under results/, aggregates the key
 metrics, and emits tables + plots suitable for paper-ready figures.
@@ -72,7 +72,7 @@ def plot_overall(df: pd.DataFrame, out_path: Path) -> None:
     metrics = df.set_index("run")[["Rel", "Con", "Comp"]]
     metrics.plot(kind="bar", ax=ax, width=0.85)
     ax.set_ylabel("Score")
-    ax.set_title("FinalProposal overall metrics")
+    ax.set_title("Reward rerank overall metrics")
     ax.legend(title="Metric")
     fig.tight_layout()
     fig.savefig(out_path, dpi=200)
@@ -129,7 +129,7 @@ def write_report(
 ) -> None:
     report_path = out_dir / "report.md"
     lines = []
-    lines.append("# FinalProposal results summary")
+    lines.append("# Reward rerank results summary")
     lines.append("")
     if not df.empty:
         lines.append("## Overall (overall split, per run)")
@@ -155,7 +155,7 @@ def write_report(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Summarize FinalProposal results and plot.")
+    parser = argparse.ArgumentParser(description="Summarize review_reward_rerank results and plot.")
     parser.add_argument(
         "--base-run",
         default="base__reward_default",

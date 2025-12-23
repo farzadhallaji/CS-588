@@ -1,5 +1,5 @@
 """
-FinalProposal: SoftCRScore + evidence-grounded preference learning pipeline.
+review_reward_rerank: SoftCRScore + evidence-grounded preference learning pipeline.
 
 All code lives in this folder to avoid touching the existing ProposedApproach code.
 """

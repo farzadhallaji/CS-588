@@ -1,6 +1,6 @@
 """
 Export paired system outputs for lightweight human evaluation.
-Creates a CSV with overlapping items so human_eval.py can compute paired deltas.
+Creates a CSV with overlapping items for downstream paired-delta analysis.
 """
 
 from __future__ import annotations

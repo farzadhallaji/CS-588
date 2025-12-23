@@ -33,7 +33,7 @@ from .reward import RewardWeights, compute_reward
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="FinalProposal inference entry point.")
+    parser = argparse.ArgumentParser(description="review_reward_rerank inference entry point.")
     parser.add_argument("--mode", choices=["select", "generate"], default="select", help="select: use provided candidates; generate: create then select.")
     parser.add_argument("--candidates", type=Path, help="Existing candidates JSONL (required for mode=select).")
     parser.add_argument("--raw-data", type=Path, default=Path(__file__).resolve().parent.parent / "CRScore" / "human_study" / "phase1" / "raw_data.json")
@@ -51,7 +51,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--device", type=str, default="cpu")
     parser.add_argument("--load-in-4bit", action="store_true", help="Load HF base in 4-bit (LoRA).")
     parser.add_argument("--model-path", type=str, default="mixedbread-ai/mxbai-embed-large-v1", help="SentenceTransformer model for scoring.")
-    parser.add_argument("--tau", type=float, default=LoopConfig.tau, help="CRScore threshold; keep consistent with evaluate/human_eval.")
+    parser.add_argument("--tau", type=float, default=LoopConfig.tau, help="CRScore threshold; keep consistent with evaluate.py.")
     parser.add_argument("--temp", type=float, default=0.05, help="SoftCRScore temperature.")
     parser.add_argument("--evidence-margin", type=float, default=0.35)
     parser.add_argument("--top-k-align", type=int, default=2)

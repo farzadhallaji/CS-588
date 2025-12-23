@@ -44,7 +44,7 @@ def choose_editor(args: argparse.Namespace):
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Generate best-of-N candidates for FinalProposal.")
+    parser = argparse.ArgumentParser(description="Generate best-of-N candidates for review_reward_rerank.")
     parser.add_argument("--raw-data", type=Path, default=Path(__file__).resolve().parent.parent / "CRScore" / "human_study" / "phase1" / "raw_data.json")
     parser.add_argument("--split", choices=["dev", "test", "all"], default="test")
     parser.add_argument("--limit", type=int, default=None)

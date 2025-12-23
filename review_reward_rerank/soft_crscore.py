@@ -14,7 +14,7 @@ try:
     from sentence_transformers import SentenceTransformer
 except ModuleNotFoundError as exc:  # pragma: no cover - dependency hint
     raise RuntimeError(
-        "sentence-transformers is required for FinalProposal. Install via `pip install sentence-transformers torch`."
+        "sentence-transformers is required for review_reward_rerank. Install via `pip install sentence-transformers torch`."
     ) from exc
 
 EPS = 1e-8

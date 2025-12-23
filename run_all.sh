@@ -1,37 +1,45 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Single entry point: runs main loop, ablations, and threshold-gated local LLM refinements.
-# Configure with env vars as needed:
-#   MODEL_PATH=... (SentenceTransformer for scoring)
-#   RAW_DATA=...   (path to raw_data.json)
-#   TAU=..., TAU_EVIDENCE=..., MAX_CHANGE=...
-#   OLLAMA_MODEL=... (for local LLM editing; default llama3:8b-instruct-q4_0)
-#   QWEN_MODEL_PATH=... (optional HF local model for threshold refinement)
+# Unified runner: baselines, ablations, proposal v1, threshold refinement, and reward-rerank pipeline.
+# Configure via env vars as needed.
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+export PYTHONPATH="$ROOT:${PYTHONPATH:-}"
+
+# Shared defaults
 RAW_DATA="${RAW_DATA:-$ROOT/../CRScore/human_study/phase1/raw_data.json}"
 MODEL_PATH="${MODEL_PATH:-mixedbread-ai/mxbai-embed-large-v1}"
 TAU="${TAU:-0.7314}"
 TAU_EVIDENCE="${TAU_EVIDENCE:-0.35}"
 MAX_CHANGE="${MAX_CHANGE:-0.7}"
 OLLAMA_MODEL="${OLLAMA_MODEL:-llama3:8b-instruct-q4_0}"
-OUT_DIR="${OUT_DIR:-$ROOT/results}"
-HF_OUT_DIR="${HF_OUT_DIR:-$ROOT/results_hf}"
-PHASE2_DIR="${PHASE2_DIR:-$ROOT/../CRScore/human_study/phase2}"
-SPLITS_OUT="${SPLITS_OUT:-$OUT_DIR/splits.json}"
-FEWSHOT_OUT="${FEWSHOT_OUT:-$OUT_DIR/fewshot_pairs.json}"
-PROPOSAL_OUT="${PROPOSAL_OUT:-$OUT_DIR/proposal_v1.jsonl}"
-PROPOSAL_SUMMARY="${PROPOSAL_SUMMARY:-$OUT_DIR/proposal_v1_summary.json}"
-HUMAN_BASELINE_SYSTEM="${HUMAN_BASELINE_SYSTEM:-msg}"
-HUMAN_TARGET_SYSTEM="${HUMAN_TARGET_SYSTEM:-gpt3.5_pred}"
-HUMAN_CORR_SYSTEM="${HUMAN_CORR_SYSTEM:-}"
-HUMAN_OUTPUTS="${HUMAN_OUTPUTS:-}"
-HUMAN_SUMMARY_OUT="${HUMAN_SUMMARY_OUT:-$OUT_DIR/human_eval_summary.json}"
-EXTRA_OLLAMA_MODELS="${EXTRA_OLLAMA_MODELS:-deepseek-coder:6.7b-base-q4_0,qwen2.5-coder:7b}" # comma-separated; combined with OLLAMA_MODEL gives three defaults
+EXTRA_OLLAMA_MODELS="${EXTRA_OLLAMA_MODELS:-deepseek-coder:6.7b-base-q4_0,qwen2.5-coder:7b}" # comma-separated
 THRESHOLD_PROMPTS="${THRESHOLD_PROMPTS:-default,concise,evidence,test-heavy}"
 
-mkdir -p "$OUT_DIR"
+# Output roots
+OUT_DIR="${OUT_DIR:-$ROOT/results}"
+BASE_OUT="${BASE_OUT:-$OUT_DIR/baseline}"
+RERANK_OUT="${RERANK_OUT:-$OUT_DIR/reward_rerank}"
+HF_OUT_DIR="${HF_OUT_DIR:-$ROOT/results_hf}"
+
+# Baseline/proposal outputs
+SPLITS_OUT="${SPLITS_OUT:-$BASE_OUT/splits.json}"
+FEWSHOT_OUT="${FEWSHOT_OUT:-$BASE_OUT/fewshot_pairs.json}"
+PROPOSAL_OUT="${PROPOSAL_OUT:-$BASE_OUT/proposal_v1.jsonl}"
+PROPOSAL_SUMMARY="${PROPOSAL_SUMMARY:-$BASE_OUT/proposal_v1_summary.json}"
+
+# Reward-rerank defaults
+RERANK_MODEL_TYPE="${RERANK_MODEL_TYPE:-ollama}" # ollama|hf-local|echo|lora
+RERANK_MODEL_NAME="${RERANK_MODEL_NAME:-llama3:8b-instruct-q4_0}"
+RERANK_PROMPTS="${RERANK_PROMPTS:-default,evidence_grounded,test_heavy,concise}"
+RERANK_CAND_DIR="${RERANK_CAND_DIR:-$RERANK_OUT/candidates}"
+RERANK_SEL_DIR="${RERANK_SEL_DIR:-$RERANK_OUT/selected}"
+RERANK_SUM_DIR="${RERANK_SUM_DIR:-$RERANK_OUT/summaries}"
+RERANK_ROBUST_DIR="${RERANK_ROBUST_DIR:-$RERANK_OUT/robustness}"
+SYSTEM_B="${SYSTEM_B:-}" # optional export for human study comparison
+
+mkdir -p "$OUT_DIR" "$BASE_OUT" "$RERANK_OUT" "$RERANK_CAND_DIR" "$RERANK_SEL_DIR" "$RERANK_SUM_DIR" "$RERANK_ROBUST_DIR"
 
 ensure_ollama() {
   if ! command -v ollama >/dev/null 2>&1; then
@@ -55,17 +63,6 @@ have_model() {
   curl -s http://127.0.0.1:11434/api/tags | grep -q "\"name\":\"${model}\""
 }
 
-run_or_skip() {
-  local target="$1"
-  shift
-  if [[ -s "$target" ]]; then
-    echo "Skipping; found $target"
-    return 0
-  fi
-  echo "Running: $*"
-  "$@"
-}
-
 ensure_model() {
   local model="$1"
   if have_model "$model"; then
@@ -79,34 +76,94 @@ ensure_model() {
   return 1
 }
 
+run_or_skip() {
+  local target="$1"
+  shift
+  if [[ -s "$target" ]]; then
+    echo "Skipping; found $target"
+    return 0
+  fi
+  echo "Running: $*"
+  "$@"
+}
+
 slug() {
   echo "$1" | tr '/:' '__' | tr ' ' '_' | tr '[:upper:]' '[:lower:]'
 }
 
+count_lines() {
+  local file="$1"
+  if [[ -s "$file" ]]; then
+    python - "$file" <<'PY'
+from pathlib import Path
+import sys
+p = Path(sys.argv[1])
+print(sum(1 for _ in p.open()))
+PY
+  else
+    echo "0"
+  fi
+}
+
+# Skip only when the JSONL has the expected number of rows; rerun if incomplete.
+run_or_complete_jsonl() {
+  local target="$1"
+  local expected="$2"
+  shift 2
+  if [[ -n "$expected" && "$expected" != "0" && -s "$target" ]]; then
+    local lines
+    lines=$(count_lines "$target")
+    if [[ "$lines" -ge "$expected" ]]; then
+      echo "Skipping; found $lines/$expected rows in $target"
+      return 0
+    else
+      echo "Incomplete ($lines/$expected) -> rerunning: $*"
+    fi
+  elif [[ -s "$target" ]]; then
+    echo "Skipping; found $target"
+    return 0
+  fi
+  echo "Running: $*"
+  "$@"
+}
+
+# ---------------- Baselines + proposal v1 + threshold sweep ----------------
 echo "=== Freeze deterministic dev/test split ==="
 run_or_skip "$SPLITS_OUT" python "$ROOT/scripts/make_splits.py" --raw-data "$RAW_DATA" --out "$SPLITS_OUT"
+
+EXPECTED_TEST_COUNT=""
+if [[ -s "$SPLITS_OUT" ]]; then
+  EXPECTED_TEST_COUNT=$(python - "$SPLITS_OUT" <<'PY'
+import json, sys
+with open(sys.argv[1]) as fh:
+    data = json.load(fh)
+print(len(data.get("test", [])))
+PY
+)
+fi
+
 
 echo "=== Build few-shot pairs for proposal v1 baseline ==="
 run_or_skip "$FEWSHOT_OUT" python "$ROOT/scripts/build_fewshot_pairs.py" --raw-data "$RAW_DATA" --tau "$TAU" --model-path "$MODEL_PATH" --out "$FEWSHOT_OUT"
 
 echo "=== Baseline (human seed) ==="
-run_or_skip "$OUT_DIR/baseline_summary.json" python "$ROOT/evaluate.py" --raw-data "$RAW_DATA" --split test --tau "$TAU" --model-path "$MODEL_PATH" --baseline-only --summary-out "$OUT_DIR/baseline_summary.json"
+run_or_skip "$BASE_OUT/baseline_summary.json" python "$ROOT/evaluate.py" --raw-data "$RAW_DATA" --split test --tau "$TAU" --model-path "$MODEL_PATH" --baseline-only --summary-out "$BASE_OUT/baseline_summary.json"
 
 echo "=== Main loop + ablations (template editor) ==="
-run_or_skip "$OUT_DIR/loop.jsonl" python "$ROOT/run.py" --raw-data "$RAW_DATA" --split test --mode loop --model-path "$MODEL_PATH" --tau "$TAU" --tau-evidence "$TAU_EVIDENCE" --max-change "$MAX_CHANGE" --output "$OUT_DIR/loop.jsonl"
-run_or_skip "$OUT_DIR/single_edit.jsonl" python "$ROOT/run.py" --raw-data "$RAW_DATA" --split test --mode k1 --model-path "$MODEL_PATH" --tau "$TAU" --tau-evidence "$TAU_EVIDENCE" --max-change "$MAX_CHANGE" --output "$OUT_DIR/single_edit.jsonl"
-run_or_skip "$OUT_DIR/single_rewrite.jsonl" python "$ROOT/run.py" --raw-data "$RAW_DATA" --split test --mode rewrite --max-iter 1 --model-path "$MODEL_PATH" --tau "$TAU" --tau-evidence "$TAU_EVIDENCE" --max-change 1.0 --output "$OUT_DIR/single_rewrite.jsonl"
-run_or_skip "$OUT_DIR/no_selection.jsonl" python "$ROOT/run.py" --raw-data "$RAW_DATA" --split test --mode no-selection --model-path "$MODEL_PATH" --tau "$TAU" --tau-evidence "$TAU_EVIDENCE" --max-change "$MAX_CHANGE" --output "$OUT_DIR/no_selection.jsonl"
-run_or_skip "$OUT_DIR/no_evidence.jsonl" python "$ROOT/run.py" --raw-data "$RAW_DATA" --split test --mode no-evidence --model-path "$MODEL_PATH" --tau "$TAU" --tau-evidence "$TAU_EVIDENCE" --max-change "$MAX_CHANGE" --output "$OUT_DIR/no_evidence.jsonl"
-run_or_skip "$OUT_DIR/rewrite_loop.jsonl" python "$ROOT/run.py" --raw-data "$RAW_DATA" --split test --mode rewrite --model-path "$MODEL_PATH" --tau "$TAU" --tau-evidence "$TAU_EVIDENCE" --max-change 1.0 --output "$OUT_DIR/rewrite_loop.jsonl"
+run_or_complete_jsonl "$BASE_OUT/loop.jsonl" "$EXPECTED_TEST_COUNT" python "$ROOT/run.py" --raw-data "$RAW_DATA" --split test --mode loop --model-path "$MODEL_PATH" --tau "$TAU" --tau-evidence "$TAU_EVIDENCE" --max-change "$MAX_CHANGE" --output "$BASE_OUT/loop.jsonl"
+run_or_complete_jsonl "$BASE_OUT/single_edit.jsonl" "$EXPECTED_TEST_COUNT" python "$ROOT/run.py" --raw-data "$RAW_DATA" --split test --mode k1 --model-path "$MODEL_PATH" --tau "$TAU" --tau-evidence "$TAU_EVIDENCE" --max-change "$MAX_CHANGE" --output "$BASE_OUT/single_edit.jsonl"
+run_or_complete_jsonl "$BASE_OUT/single_rewrite.jsonl" "$EXPECTED_TEST_COUNT" python "$ROOT/run.py" --raw-data "$RAW_DATA" --split test --mode rewrite --max-iter 1 --model-path "$MODEL_PATH" --tau "$TAU" --tau-evidence "$TAU_EVIDENCE" --max-change 1.0 --output "$BASE_OUT/single_rewrite.jsonl"
+run_or_complete_jsonl "$BASE_OUT/no_selection.jsonl" "$EXPECTED_TEST_COUNT" python "$ROOT/run.py" --raw-data "$RAW_DATA" --split test --mode no-selection --model-path "$MODEL_PATH" --tau "$TAU" --tau-evidence "$TAU_EVIDENCE" --max-change "$MAX_CHANGE" --output "$BASE_OUT/no_selection.jsonl"
+run_or_complete_jsonl "$BASE_OUT/no_evidence.jsonl" "$EXPECTED_TEST_COUNT" python "$ROOT/run.py" --raw-data "$RAW_DATA" --split test --mode no-evidence --model-path "$MODEL_PATH" --tau "$TAU" --tau-evidence "$TAU_EVIDENCE" --max-change "$MAX_CHANGE" --output "$BASE_OUT/no_evidence.jsonl"
+run_or_complete_jsonl "$BASE_OUT/rewrite_loop.jsonl" "$EXPECTED_TEST_COUNT" python "$ROOT/run.py" --raw-data "$RAW_DATA" --split test --mode rewrite --model-path "$MODEL_PATH" --tau "$TAU" --tau-evidence "$TAU_EVIDENCE" --max-change 1.0 --output "$BASE_OUT/rewrite_loop.jsonl"
 
 echo "=== Evaluate loop outputs ==="
-run_or_skip "$OUT_DIR/loop_summary.json" python "$ROOT/evaluate.py" --raw-data "$RAW_DATA" --split test --tau "$TAU" --model-path "$MODEL_PATH" --outputs "$OUT_DIR/loop.jsonl" --summary-out "$OUT_DIR/loop_summary.json"
-run_or_skip "$OUT_DIR/single_edit_summary.json" python "$ROOT/evaluate.py" --raw-data "$RAW_DATA" --split test --tau "$TAU" --model-path "$MODEL_PATH" --outputs "$OUT_DIR/single_edit.jsonl" --summary-out "$OUT_DIR/single_edit_summary.json"
-run_or_skip "$OUT_DIR/single_rewrite_summary.json" python "$ROOT/evaluate.py" --raw-data "$RAW_DATA" --split test --tau "$TAU" --model-path "$MODEL_PATH" --outputs "$OUT_DIR/single_rewrite.jsonl" --summary-out "$OUT_DIR/single_rewrite_summary.json"
-run_or_skip "$OUT_DIR/no_selection_summary.json" python "$ROOT/evaluate.py" --raw-data "$RAW_DATA" --split test --tau "$TAU" --model-path "$MODEL_PATH" --outputs "$OUT_DIR/no_selection.jsonl" --summary-out "$OUT_DIR/no_selection_summary.json"
-run_or_skip "$OUT_DIR/no_evidence_summary.json" python "$ROOT/evaluate.py" --raw-data "$RAW_DATA" --split test --tau "$TAU" --model-path "$MODEL_PATH" --outputs "$OUT_DIR/no_evidence.jsonl" --summary-out "$OUT_DIR/no_evidence_summary.json"
-run_or_skip "$OUT_DIR/rewrite_loop_summary.json" python "$ROOT/evaluate.py" --raw-data "$RAW_DATA" --split test --tau "$TAU" --model-path "$MODEL_PATH" --outputs "$OUT_DIR/rewrite_loop.jsonl" --summary-out "$OUT_DIR/rewrite_loop_summary.json"
+run_or_skip "$BASE_OUT/loop_summary.json" python "$ROOT/evaluate.py" --raw-data "$RAW_DATA" --split test --tau "$TAU" --model-path "$MODEL_PATH" --outputs "$BASE_OUT/loop.jsonl" --summary-out "$BASE_OUT/loop_summary.json"
+run_or_skip "$BASE_OUT/single_edit_summary.json" python "$ROOT/evaluate.py" --raw-data "$RAW_DATA" --split test --tau "$TAU" --model-path "$MODEL_PATH" --outputs "$BASE_OUT/single_edit.jsonl" --summary-out "$BASE_OUT/single_edit_summary.json"
+run_or_skip "$BASE_OUT/single_rewrite_summary.json" python "$ROOT/evaluate.py" --raw-data "$RAW_DATA" --split test --tau "$TAU" --model-path "$MODEL_PATH" --outputs "$BASE_OUT/single_rewrite.jsonl" --summary-out "$BASE_OUT/single_rewrite_summary.json"
+run_or_skip "$BASE_OUT/no_selection_summary.json" python "$ROOT/evaluate.py" --raw-data "$RAW_DATA" --split test --tau "$TAU" --model-path "$MODEL_PATH" --outputs "$BASE_OUT/no_selection.jsonl" --summary-out "$BASE_OUT/no_selection_summary.json"
+run_or_skip "$BASE_OUT/no_evidence_summary.json" python "$ROOT/evaluate.py" --raw-data "$RAW_DATA" --split test --tau "$TAU" --model-path "$MODEL_PATH" --outputs "$BASE_OUT/no_evidence.jsonl" --summary-out "$BASE_OUT/no_evidence_summary.json"
+run_or_skip "$BASE_OUT/rewrite_loop_summary.json" python "$ROOT/evaluate.py" --raw-data "$RAW_DATA" --split test --tau "$TAU" --model-path "$MODEL_PATH" --outputs "$BASE_OUT/rewrite_loop.jsonl" --summary-out "$BASE_OUT/rewrite_loop_summary.json"
 
 echo "=== Proposal v1 few-shot baseline (Ollama sweep) ==="
 if ensure_ollama; then
@@ -122,9 +179,9 @@ if ensure_ollama; then
       continue
     fi
     MODEL_SLUG=$(slug "$MODEL_TRIMMED")
-    OUT_FILE="$OUT_DIR/proposal_v1_${MODEL_SLUG}.jsonl"
-    SUM_FILE="$OUT_DIR/proposal_v1_${MODEL_SLUG}_summary.json"
-    run_or_skip "$OUT_FILE" python "$ROOT/proposal_v1.py" \
+    OUT_FILE="$BASE_OUT/proposal_v1_${MODEL_SLUG}.jsonl"
+    SUM_FILE="$BASE_OUT/proposal_v1_${MODEL_SLUG}_summary.json"
+    run_or_complete_jsonl "$OUT_FILE" "$EXPECTED_TEST_COUNT" python "$ROOT/proposal_v1.py" \
       --raw-data "$RAW_DATA" \
       --split test \
       --tau "$TAU" \
@@ -161,9 +218,9 @@ if ensure_ollama; then
     for PV in "${PROMPTS[@]}"; do
       PV_TRIMMED="$(echo "$PV" | xargs)"
       [[ -z "$PV_TRIMMED" ]] && continue
-      OUT_FILE="$OUT_DIR/threshold_${PV_TRIMMED}_${MODEL_SLUG}.jsonl"
-      SUM_FILE="$OUT_DIR/threshold_${PV_TRIMMED}_${MODEL_SLUG}_summary.json"
-      run_or_skip "$OUT_FILE" python "$ROOT/threshold_refine.py" \
+      OUT_FILE="$BASE_OUT/threshold_${PV_TRIMMED}_${MODEL_SLUG}.jsonl"
+      SUM_FILE="$BASE_OUT/threshold_${PV_TRIMMED}_${MODEL_SLUG}_summary.json"
+      run_or_complete_jsonl "$OUT_FILE" "$EXPECTED_TEST_COUNT" python "$ROOT/threshold_refine.py" \
         --raw-data "$RAW_DATA" \
         --split test \
         --tau "$TAU" \
@@ -183,4 +240,151 @@ if ensure_ollama; then
   done
 fi
 
-echo "All runs complete. Check summaries under $OUT_DIR and $HF_OUT_DIR."
+# ---------------- Reward rerank pipeline (review_reward_rerank) ----------------
+gen_candidates() {
+  local cfg="$1"
+  local name="" num_samples=2 temperature=0.3 prompts="$RERANK_PROMPTS" limit=""
+  for kv in $cfg; do
+    local k="${kv%%=*}" v="${kv#*=}"
+    eval "$k=\"$v\""
+  done
+  local cand_file="$RERANK_CAND_DIR/candidates_${name}.jsonl"
+  run_or_skip "$cand_file" python -m review_reward_rerank.generate_candidates \
+    --raw-data "$RAW_DATA" \
+    --split test \
+    --tau "$TAU" \
+    --model-type "$RERANK_MODEL_TYPE" \
+    --model-name "$RERANK_MODEL_NAME" \
+    --prompt-variants "$prompts" \
+    --num-samples "$num_samples" \
+    --temperature "$temperature" \
+    --output "$cand_file"
+  echo "$cand_file"
+}
+
+select_and_eval() {
+  local cand_file="$1"
+  local cand_tag="$2"
+  local cfg="$3"
+  local name="" tau_val="$TAU" temp=0.05 evidence_margin=0.35 top_k_align=2 score_mode="soft"
+  local w_rel=1.0 w_unsupported=0.6 w_len=0.02 w_copy=0.15 len_norm=400
+  for kv in $cfg; do
+    local k="${kv%%=*}" v="${kv#*=}"
+    eval "$k=\"$v\""
+  done
+  local select_file="$RERANK_SEL_DIR/selected_${cand_tag}__${name}.jsonl"
+  local summary_file="$RERANK_SUM_DIR/summary_${cand_tag}__${name}.json"
+  run_or_complete_jsonl "$select_file" "$EXPECTED_TEST_COUNT" python -m review_reward_rerank.select_best \
+    --candidates "$cand_file" \
+    --tau "$tau_val" \
+    --temp "$temp" \
+    --evidence-margin "$evidence_margin" \
+    --top-k-align "$top_k_align" \
+    --model-path "$MODEL_PATH" \
+    --score-mode "$score_mode" \
+    --w-rel "$w_rel" \
+    --w-unsupported "$w_unsupported" \
+    --w-len "$w_len" \
+    --w-copy "$w_copy" \
+    --len-norm "$len_norm" \
+    --output "$select_file"
+
+  run_or_skip "$summary_file" python "$ROOT/evaluate.py" \
+    --raw-data "$RAW_DATA" \
+    --split test \
+    --tau "$tau_val" \
+    --model-path "$MODEL_PATH" \
+    --outputs "$select_file" \
+    --summary-out "$summary_file" \
+    >/dev/null
+
+  echo "$select_file"
+}
+
+run_robustness() {
+  local select_file="$1"
+  local tag="$2"
+  local tau_val="${3:-$TAU}"
+  local rob_file="$RERANK_ROBUST_DIR/robust_${tag}.csv"
+  run_or_skip "$rob_file" python -m review_reward_rerank.robustness_suite \
+    --outputs "$select_file" \
+    --raw-data "$RAW_DATA" \
+    --tau "$tau_val" \
+    --model-path "$MODEL_PATH" \
+    --output-csv "$rob_file"
+}
+
+BASE_GEN_CFG="name=base num_samples=2 temperature=0.3 prompts=${RERANK_PROMPTS}"
+GEN_ABLATIONS=(
+  "name=temp02 num_samples=2 temperature=0.2 prompts=${RERANK_PROMPTS}"
+  "name=temp06 num_samples=2 temperature=0.6 prompts=${RERANK_PROMPTS}"
+  "name=num4 num_samples=4 temperature=0.3 prompts=${RERANK_PROMPTS}"
+  "name=num8 num_samples=8 temperature=0.3 prompts=${RERANK_PROMPTS}"
+  "name=prompt_default num_samples=2 temperature=0.3 prompts=default"
+  "name=prompt_evidence num_samples=2 temperature=0.3 prompts=evidence_grounded"
+  "name=prompt_concise num_samples=2 temperature=0.3 prompts=concise"
+  "name=prompt_testheavy num_samples=2 temperature=0.3 prompts=test_heavy"
+)
+
+BASE_SCORE_CFG="name=reward_default score_mode=soft w_unsupported=0.6 w_len=0.02 w_copy=0.15 len_norm=400 temp=0.05 tau=${TAU}"
+SCORE_ABLATIONS=(
+  "name=soft_only score_mode=soft w_unsupported=0 w_len=0 w_copy=0 len_norm=400 temp=0.05 tau=${TAU}"
+  "name=soft_len score_mode=soft w_unsupported=0 w_len=0.02 w_copy=0 len_norm=400 temp=0.05 tau=${TAU}"
+  "name=soft_evidence score_mode=soft w_unsupported=0.6 w_len=0 w_copy=0 len_norm=400 temp=0.05 tau=${TAU}"
+  "name=soft_evidence_len score_mode=soft w_unsupported=0.6 w_len=0.02 w_copy=0 len_norm=400 temp=0.05 tau=${TAU}"
+  "name=soft_evidence_len_copy score_mode=soft w_unsupported=0.6 w_len=0.02 w_copy=0.15 len_norm=400 temp=0.05 tau=${TAU}"
+  "name=hard_cr score_mode=hard w_unsupported=0.6 w_len=0.02 w_copy=0.15 len_norm=400 temp=0.05 tau=${TAU}"
+  "name=tau_low score_mode=soft w_unsupported=0.6 w_len=0.02 w_copy=0.15 len_norm=400 temp=0.05 tau=0.65"
+  "name=tau_high score_mode=soft w_unsupported=0.6 w_len=0.02 w_copy=0.15 len_norm=400 temp=0.05 tau=0.80"
+  "name=soft_temp_low score_mode=soft w_unsupported=0.6 w_len=0.02 w_copy=0.15 len_norm=400 temp=0.02 tau=${TAU}"
+  "name=soft_temp_high score_mode=soft w_unsupported=0.6 w_len=0.02 w_copy=0.15 len_norm=400 temp=0.10 tau=${TAU}"
+)
+
+echo "=== Reward rerank pipeline ==="
+if [[ "$RERANK_MODEL_TYPE" == "ollama" ]] && ! ensure_ollama; then
+  echo "Skipping reward rerank pipeline; ollama not available."
+else
+  BASE_CAND_FILE=$(gen_candidates "$BASE_GEN_CFG")
+  BASE_SELECT_FILE=$(select_and_eval "$BASE_CAND_FILE" "base" "$BASE_SCORE_CFG")
+  run_robustness "$BASE_SELECT_FILE" "base__reward_default" "$TAU"
+
+  echo "=== Generation ablations (default scoring) ==="
+  for cfg in "${GEN_ABLATIONS[@]}"; do
+    gen_name=""
+    for kv in $cfg; do
+      k="${kv%%=*}"; v="${kv#*=}"; [[ "$k" == "name" ]] && gen_name="$v"
+    done
+    [[ -z "$gen_name" ]] && gen_name="gen"
+    cand_file=$(gen_candidates "$cfg")
+    select_and_eval "$cand_file" "gen_${gen_name}" "$BASE_SCORE_CFG"
+  done
+
+  echo "=== Reward/score ablations on base candidates ==="
+  for cfg in "${SCORE_ABLATIONS[@]}"; do
+    score_name=""
+    for kv in $cfg; do
+      k="${kv%%=*}"; v="${kv#*=}"; [[ "$k" == "name" ]] && score_name="$v"
+    done
+    [[ -z "$score_name" ]] && score_name="score"
+    select_and_eval "$BASE_CAND_FILE" "base" "$cfg"
+  done
+
+  if [[ -n "$SYSTEM_B" && -s "$SYSTEM_B" ]]; then
+    echo "=== Export paired human study CSV (overlap ensured) ==="
+    HUMAN_EXPORT="${HUMAN_EXPORT:-$RERANK_OUT/human_export.csv}"
+    python "$ROOT/review_reward_rerank/export_human_study.py" \
+      --system-a "$BASE_SELECT_FILE" \
+      --system-b "$SYSTEM_B" \
+      --raw-data "$RAW_DATA" \
+      --output "$HUMAN_EXPORT"
+  else
+    echo "Skipping human export; provide SYSTEM_B to compare against another system output."
+  fi
+
+  LOOP_OUTPUT="${LOOP_OUTPUT:-$BASE_OUT/loop.jsonl}"
+  if [[ -s "$LOOP_OUTPUT" ]]; then
+    run_robustness "$LOOP_OUTPUT" "iterative_loop_baseline" "$TAU"
+  fi
+fi
+
+echo "All runs complete. Baseline outputs under $BASE_OUT, reward rerank under $RERANK_OUT"
