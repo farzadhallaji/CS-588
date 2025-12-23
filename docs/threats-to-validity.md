@@ -1,25 +1,25 @@
 # Threats to validity
 
 ## Data and labels
-- **Single dataset, small test set (120 items)**: results may not generalize to other domains, languages, or larger corpora. The fixed 40-per-language split reduces variance but limits coverage.
-- **Pseudo-reference quality**: claims are weak labels; inaccuracies or omissions can skew relevance/comprehensiveness scoring and misguide rewrites.
-- **Potential leakage across splits**: deterministic split helps, but if similar or duplicate items exist across train/dev/test, scores may be inflated.
+- **Narrow dataset (120 items, three languages)**: coverage is limited; results may not transfer to other domains, languages, or larger codebases even with a fixed 40-per-language split.
+- **Weak-label pseudo-references**: claims act as noisy references; omissions or hallucinations can distort relevance/comprehensiveness scoring and bias the rewrite policy.
+- **Split leakage risk**: deterministic splits reduce variance but cannot rule out near-duplicates across train/dev/test, potentially inflating reported gains.
 
 ## Metrics and scoring
-- **CRScore bias**: reliance on a single embedding-based scorer may not reflect human judgments; models may overfit to CRScore quirks (length, phrasing).
-- **Threshold sensitivity**: choices of tau and relevance gates affect triggering and selection; small changes can alter outcomes materially.
-- **Penalty weights**: handcrafted weights for unsupported/length/copy penalties may not match human preferences; tuning risk of overfitting to the scorer.
+- **Single-scorer dependence**: CRScore is embedding-based and may not align with human judgment; systems may overfit quirks such as length or phrasing.
+- **Threshold and gate sensitivity**: tau choices and relevance gates materially change triggering rates and selected candidates; small shifts can reverse conclusions.
+- **Hand-tuned penalties**: weights for unsupported/length/copy penalties reflect manual preferences and may not match user perception; tuning on the scorer risks overfitting.
 
 ## Modeling and prompts
-- **Model variance**: different local models (llama3-style, deepseek-coder, qwen2.5) have varying safety and faithfulness; results depend on the chosen model and version.
-- **Sampling randomness**: temperatures and few samples can introduce instability; single-pass runs may miss better candidates or inflate variance.
-- **Prompt anchoring**: few-shot examples and prompt wording may bias outputs; examples come from the same domain and may not transfer.
+- **Model/version variability**: local models (llama3-style, deepseek-coder, qwen2.5) differ in safety and faithfulness; results depend on the specific build and quantization.
+- **Sampling noise**: low sample counts and nonzero temperatures introduce instability; single passes can miss better candidates or exaggerate variance.
+- **Prompt anchoring**: few-shot examples are drawn from the same domain; wording and examples may bias outputs and limit transfer.
 
 ## Experimental design
-- **Limited ablation scope**: sweeps cover prompts, temps, samples, and penalties, but not broader factors (e.g., alternative scorers, longer contexts, multi-pass refinement for proposal v1).
-- **Robustness coverage**: perturbation checks may not capture real-world distribution shifts (e.g., noisy diffs, multi-file changes, adversarial inputs).
-- **No human evaluation here**: all reported numbers are automatic; without human judgments, real perceived quality is uncertain.
+- **Incomplete ablations**: sweeps cover prompts, temperatures, sample counts, and penalties but exclude broader factors (alternative scorers, longer contexts, multi-pass refinement for proposal v1).
+- **Robustness gaps**: perturbation tests are limited; they may not reflect real-world shifts such as noisy diffs, multi-file changes, or adversarial edits.
+- **No human study**: evaluation is fully automatic; without human judgments, user-perceived quality and trustworthiness remain uncertain.
 
 ## Reproducibility and environment
-- **Local runtime differences**: hardware, quantization, and local model builds can change outputs; Ollama/HF-local variations affect reproducibility.
-- **Determinism limits**: fixed seeds help, but LLM servers and parallelism can introduce nondeterminism in sampling or scoring.
+- **Local runtime differences**: hardware, quantization settings, and local model builds (Ollama/HF) affect outputs; exact reproduction may require matching the stack.
+- **Limited determinism**: fixed seeds help but do not eliminate nondeterminism from LLM servers, parallelism, or sampling order.
