@@ -1,69 +1,74 @@
 # Main Approach: Threshold-Gated Single-Pass Rewrite
 
-This note explains the full method in plain terms. Assume the reader only knows that **CRScore** is the relevance scorer we use for reviews.
+Reader assumption: you know **CRScore** (Rel/Con/Comp in `[0,1]`) but nothing else.
 
-## Goal
-Upgrade noisy junior code reviews by rewriting only the weak ones, using small local LLMs, while keeping cost and risk low.
+## TL;DR
+Score the seed review with CRScore. If its relevance (Rel) is below a threshold τ, rewrite it once with a small local LLM using a structured prompt. Re-score; keep whichever version scores higher. This simple gate → rewrite → re-score loop delivers 4–5× quality gains over baseline at low cost.
 
-## Ingredients
-- **Inputs per item**: code diff, seed (junior) review, and a list of claims that describe what a good review should cover.
-- **Scorer**: CRScore gives three numbers in `[0,1]` — relevance (Rel), conciseness (Con), and comprehensiveness (Comp). We gate and judge improvements with Rel; Con/Comp are tracked for quality.
-- **Models**: local 7–8B instruct/coder models (llama3:8b-instruct-q4, deepseek-coder-6.7b-base-q4, qwen2.5-coder-7b) served locally (e.g., Ollama/HF).
-- **Prompt styles**: default, concise, evidence, test-heavy. Styles change tone/length but follow the same structure.
+## Problem Setup
+- **Inputs**: code diff, seed (junior) review, and claims describing what a good review should cover.
+- **Hard CRScore (what drives gating)**: Rel/Con/Comp in `[0,1]` from discrete matches to the claims. We trigger the rewrite when Rel < τ, and we keep the higher-Rel version after rewriting. This is the conservative, decision-making score.
+- **Soft scores (what we log for analysis/reward)**: similarity-weighted precision/recall/F1 that give partial credit when wording differs but meaning aligns. One sentence is softly matched to each claim and vice versa using cosine similarity; we then average and take the harmonic mean:
+  - soft_precision = average over review sentences of their best similarity to any claim.
+  - soft_recall = average over claims of their best similarity to any review sentence.
+  - soft_f1 = harmonic mean of soft_precision and soft_recall.
+  These appear in JSON as `soft_precision`, `soft_recall`, `soft_f1` and are used to rank/rerank candidates, not to gate. They explain “soft” quality without changing the hard decision rule.
+- **Models**: local 7–8B instruct/coder models (llama3:8b-instruct-q4, deepseek-coder-6.7b-base-q4, qwen2.5-coder-7b) run locally (e.g., Ollama/HF).
+- **Prompt styles**: default, concise, evidence, test-heavy (same structure, different tone/length).
 
-## Step-by-Step Pipeline
-1) **Score the seed review** with CRScore → Rel_seed.  
-2) **Gate**: if `Rel_seed >= τ` (threshold, typically 0.6), stop and keep the seed review.  
-3) **Rewrite once** (only if gated):
-   - Build a prompt: style text + current review + claims (and optionally diff snippets).
-   - Sample one rewrite with a modest setting (T≈0.3, one sample, short max length).
-4) **Re-score the rewrite** → Rel_new.
-5) **Select the better review**: keep the rewrite if `Rel_new > Rel_seed`, else keep the seed.
-6) **Store outputs**: final review, both scores, whether it improved, and which prompt/model were used.
+## Algorithm (plain)
+1) Score seed review → `Rel_seed`.  
+2) If `Rel_seed >= τ` (τ≈0.6), keep seed; stop.  
+3) Else, rewrite once using chosen prompt style + claims (+ optional diff snippets). Use T≈0.3, 1 sample, short max length.  
+4) Score rewrite → `Rel_new`.  
+5) Keep the higher-Rel version; log both scores, improvement flag, model, and prompt.
 
-Why single-pass? It is cheap, easy to reproduce, and the gate avoids touching already-good reviews.
+Why single-pass? Cheap, reproducible, and the gate prevents needless edits to already-good reviews.
 
-## Prompt Shapes (what the model sees)
-- **default**: “Improve the review to better match the claims; add missing key points, remove irrelevant bits; phrase uncertainties as tests; output only the revised review.”
-- **concise**: “Rewrite into 1–3 sentences; mention the main change and one concrete check/test; drop everything else.”
-- **evidence**: “Add only points supported by the claims; if unsure, suggest a test; keep it short.”
-- **test-heavy**: “Emphasize tests and failure modes; add 1–2 concrete tests; avoid restating obvious change details.”
+## Prompt Text (short form shown to the model)
+- **default**: Improve to match claims; add missing points, remove irrelevant bits; phrase uncertainty as tests; output only the revision.
+- **concise**: Rewrite into 1–3 sentences; mention main change and one concrete check/test; nothing else.
+- **evidence**: Add only claim-supported points; if unsure, suggest a test; keep it short.
+- **test-heavy**: Emphasize tests/failure modes; add 1–2 concrete tests; avoid obvious restatements.
 
-## Key Knobs
-- **Threshold τ**: higher τ rewrites more items; τ≈0.6 worked well. Lower τ saves cost but may leave weak reviews untouched.
-- **Model choice**: all three local models work; llama3 and deepseek generally scored higher than qwen in these runs.
-- **Sampling**: one sample, low temperature. Raising temperature gives diversity but costs more.
-- **Scoring strictness**: the same CRScore gate is used to decide when to rewrite and whether it improved.
+## Tunable Knobs
+- **Threshold τ**: Higher τ rewrites more items; τ≈0.6 balanced trigger rate and quality.
+- **Prompt/model**: Concise/default with llama3 or deepseek worked best; test-heavy often bloats length.
+- **Sampling**: Single sample, low temperature; raise T only if you want more diversity at higher cost.
+- **Scoring strictness**: Same CRScore gates both rewrite triggering and improvement checks.
 
-## Results at a Glance
-- **Big lift vs. baseline** (`analysis/main_systems.md`):  
-  - Baseline seed reviews: Rel 0.116 / Con 0.174 / Comp 0.101 (N=120).  
-  - Threshold-gated rewrite loop: Rel 0.521 / Con 0.549 / Comp 0.511.
-- **Single rewrite without gate**: Rel 0.493 / Con 0.505 / Comp 0.504 — good, but the gate still helps.
-- **Best prompt/model combos** (`analysis/threshold_summary.md`):  
-  - Concise + deepseek: Rel 0.789, Con 0.833, Comp 0.791, improvement rate 0.858.  
-  - Default + llama3: Rel 0.746, Con 0.767, Comp 0.777, improvement rate 0.908.  
-  - Concise + llama3: Rel 0.701, Con 0.813, Comp 0.669, improvement rate 0.875.
-- **Cross-language consistency** (`results/rewrite_loop_summary.json`): Rel ≈0.49–0.55 across Java/JS/Python with similar Con/Comp, showing no language collapses.
-- **Improvement rates** (`analysis/threshold_improvement.md`): Many settings improve ≥70% of gated items; best runs exceed 90%.
+## Quantitative Evidence
+- **Core lift vs. baseline** (`analysis/main_systems.md`): baseline Rel/Con/Comp = 0.116/0.174/0.101 (N=120) → rewrite loop 0.521/0.549/0.511 (~4–5× Rel).
+- **Gate matters**: single rewrite without gating hits Rel 0.493; the gate pushes it to 0.521.
+- **Best-performing settings** (`analysis/threshold_summary.md`):  
+  - Concise + deepseek: Rel 0.789 / Con 0.833 / Comp 0.791; improvement rate 0.858.  
+  - Default + llama3: Rel 0.746 / Con 0.767 / Comp 0.777; improvement rate 0.908.  
+  - Concise + llama3: Rel 0.701 / Con 0.813 / Comp 0.669; improvement rate 0.875.
+- **Per-language snapshots**:  
+  - Concise + deepseek (`results/threshold_concise_deepseek-coder_6.7b-base-q4_0_summary.json`): Rel 0.82 (Java) / 0.77 (JS) / 0.78 (Py); overall Rel 0.789, Con 0.833, Comp 0.791.  
+  - Concise + llama3 (`results/threshold_concise_llama3_8b-instruct-q4_0_summary.json`): Rel 0.701 overall; Con 0.813.  
+  - Concise + qwen (`results/threshold_concise_qwen2.5-coder_7b_summary.json`): Rel 0.646 overall; Con 0.694.  
+  Cross-language variance stays modest; no language collapses.
+- **Trigger effectiveness** (`analysis/threshold_improvement.md`): Many settings improve ≥70% of gated items; best runs exceed 90%.
+- **Language-agnostic baseline check** (`results/rewrite_loop_summary.json`): Rel ≈0.49–0.55 across Java/JS/Python, confirming consistency.
 
-## Practical Notes
-- Keep the gate: it avoids unnecessary rewrites and preserves strong human reviews.
-- Prefer concise/default styles for clarity; test-heavy can over-extend length and hurt Rel.
-- Use small local models to stay private and cheap; quantized 8B models were enough.
-- One-sample decoding simplifies reproducibility; fix seeds where possible, but expect minor non-determinism from LLM servers.
+## Practical Guidance
+- Keep the gate on; it protects good human reviews and reduces churn.  
+- Prefer concise/default prompts; they stay short and align with CRScore.  
+- Use small local models (quantized 7–8B) for privacy and speed; one-sample decoding keeps cost and variance low.  
+- Fix seeds when possible, but expect mild non-determinism from LLM servers.
 
-## What to Report in the Paper
-- A schematic of the **gate → rewrite → re-score → select** loop.
-- The main system table (baseline vs. rewrite loop vs. single rewrite) and one prompt/model table (e.g., concise/default variants).
-- A short paragraph on **threshold sensitivity**: τ=0.6 balanced trigger rate and quality; higher τ rewrites more but risks over-editing.
-- A brief **cost/latency note**: single-pass, one-sample, small local models keep runtime practical for batch processing.
-- **Threats to validity**: small dataset, pseudo-reference claims, CRScore alignment limits, local model variance, and lack of human evaluation (see `docs/threats-to-validity.md` for details).
+## What to Show in the Paper
+- Diagram or 4-step schematic: **score → gate → rewrite → re-score/select**.  
+- Tables: main systems (baseline vs. single rewrite vs. gated rewrite), plus prompt/model table (concise/default variants).  
+- Sensitivity blurb: τ=0.6 is a good balance; higher τ rewrites more but risks over-editing; lower τ saves cost but leaves weak reviews.  
+- Cost/latency note: single-pass, one-sample, small models keep batch runtime practical.  
+- Threats to validity (pointer: `docs/threats-to-validity.md`): small dataset, pseudo-reference claims, CRScore alignment limits, model/version variability, lack of human eval.
 
 ## Reproduction Checklist
-- Inputs: diff, seed review, claims.  
-- Set τ (e.g., 0.6).  
-- Pick prompt style (concise or default recommended) and model (llama3 8B or deepseek 6.7B).  
-- Decode with T≈0.3, 1 sample, short max length.  
-- Score with CRScore; keep the better of seed vs. rewrite.  
-- Log scores, improvement flag, and chosen variant.
+1) Gather diff, seed review, and claims.  
+2) Choose τ (start at 0.6).  
+3) Pick prompt style (concise or default) and model (llama3 8B or deepseek 6.7B).  
+4) Decode: T≈0.3, 1 sample, short max length.  
+5) Score with CRScore; keep the higher Rel of seed vs. rewrite.  
+6) Log Rel/Con/Comp, improvement flag, model, prompt, τ, and seed score for auditing.
