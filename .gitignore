@@ -9,6 +9,6 @@ saved*
 *.txt
 *(\.?)amlt*
 pretrained_models
-
+reviewww/*
 
 !code/stopwords.txt

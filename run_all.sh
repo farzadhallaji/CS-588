@@ -17,6 +17,9 @@ MAX_CHANGE="${MAX_CHANGE:-0.7}"
 OLLAMA_MODEL="${OLLAMA_MODEL:-llama3:8b-instruct-q4_0}"
 EXTRA_OLLAMA_MODELS="${EXTRA_OLLAMA_MODELS:-deepseek-coder:6.7b-base-q4_0,qwen2.5-coder:7b}" # comma-separated
 THRESHOLD_PROMPTS="${THRESHOLD_PROMPTS:-default,concise,evidence,test-heavy}"
+THETA_SENS_OUT="${THETA_SENS_OUT:-$OUT_DIR/$SPLIT/theta_sensitivity}"
+EVIDENCE_SENS_OUT="${EVIDENCE_SENS_OUT:-$OUT_DIR/$SPLIT/evidence_sensitivity}"
+ITER_SENS_OUT="${ITER_SENS_OUT:-$OUT_DIR/$SPLIT/iter_sensitivity}"
 
 # Output roots
 OUT_DIR="${OUT_DIR:-$ROOT/results}"
@@ -192,6 +195,60 @@ if ensure_ollama; then
         --summary-out "$SUM_FILE"
     done
   done
+fi
+
+echo "=== Ablations: θ gate sensitivity (0.5/0.6/0.7) ==="
+if ensure_ollama; then
+  if ensure_model "$OLLAMA_MODEL"; then
+    run_or_skip "$THETA_SENS_OUT/refine_summary.json" python "$ROOT/scripts/threshold_sensitivity.py" \
+      --raw-data "$RAW_DATA" \
+      --split "$SPLIT" \
+      --thresholds 0.5 0.6 0.7 \
+      --prompt-variant default \
+      --model-type ollama \
+      --model-name "$OLLAMA_MODEL" \
+      --run-refine \
+      --output-dir "$THETA_SENS_OUT"
+  fi
+else
+  echo "Skipping θ sensitivity; ollama not available."
+fi
+
+echo "=== Ablations: τ_evidence sensitivity (0.25/0.35/0.45) ==="
+if ensure_ollama; then
+  if ensure_model "$OLLAMA_MODEL"; then
+    run_or_skip "$EVIDENCE_SENS_OUT/summary.json" python "$ROOT/scripts/evidence_sensitivity.py" \
+      --raw-data "$RAW_DATA" \
+      --split "$SPLIT" \
+      --tau-evidence 0.25 0.35 0.45 \
+      --max-iter 3 \
+      --num-samples 2 \
+      --prompt-style loop \
+      --selection crscore \
+      --model-type ollama \
+      --model-name "$OLLAMA_MODEL" \
+      --output-dir "$EVIDENCE_SENS_OUT"
+  fi
+else
+  echo "Skipping τ_evidence sensitivity; ollama not available."
+fi
+
+echo "=== Ablations: iteration budget sensitivity (N=1/2/3, K=2) ==="
+if ensure_ollama; then
+  if ensure_model "$OLLAMA_MODEL"; then
+    run_or_skip "$ITER_SENS_OUT/summary.json" python "$ROOT/scripts/iter_sensitivity.py" \
+      --raw-data "$RAW_DATA" \
+      --split "$SPLIT" \
+      --iters 1 2 3 \
+      --num-samples 2 \
+      --prompt-style loop \
+      --selection crscore \
+      --model-type ollama \
+      --model-name "$OLLAMA_MODEL" \
+      --output-dir "$ITER_SENS_OUT"
+  fi
+else
+  echo "Skipping iteration sensitivity; ollama not available."
 fi
 
 # ---------------- Reward rerank pipeline (review_reward_rerank) ----------------
