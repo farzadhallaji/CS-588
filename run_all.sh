@@ -251,6 +251,32 @@ else
   echo "Skipping iteration sensitivity; ollama not available."
 fi
 
+echo "=== Stats: paired tests and CIs ==="
+STATS_OUT="${STATS_OUT:-$OUT_DIR/$SPLIT/stats}"
+mkdir -p "$STATS_OUT"
+DEFAULT_THRESH_FILE="$BASE_OUT/threshold_default_$(slug "$OLLAMA_MODEL").jsonl"
+if [[ -f "$DEFAULT_THRESH_FILE" ]]; then
+  run_or_skip "$STATS_OUT/threshold_default_within.json" python "$ROOT/scripts/stats_tests.py" \
+    --within-file "$DEFAULT_THRESH_FILE" \
+    --output-dir "$STATS_OUT"
+fi
+# Optional model comparison: base model vs first extra on default prompt
+if [[ -n "$EXTRA_OLLAMA_MODELS" ]]; then
+  IFS=',' read -r -a EXTRA_MODELS <<<"$EXTRA_OLLAMA_MODELS"
+  if [[ ${#EXTRA_MODELS[@]} -gt 0 ]]; then
+    COMP_MODEL="$(echo "${EXTRA_MODELS[0]}" | xargs)"
+    COMP_THRESH_FILE="$BASE_OUT/threshold_default_$(slug "$COMP_MODEL").jsonl"
+    if [[ -n "$COMP_MODEL" && -f "$COMP_THRESH_FILE" && -f "$DEFAULT_THRESH_FILE" ]]; then
+      run_or_skip "$STATS_OUT/threshold_default_$(slug "$OLLAMA_MODEL")_vs_$(slug "$COMP_MODEL").json" python "$ROOT/scripts/stats_tests.py" \
+        --file-a "$DEFAULT_THRESH_FILE" \
+        --file-b "$COMP_THRESH_FILE" \
+        --label-a "$(slug "$OLLAMA_MODEL")" \
+        --label-b "$(slug "$COMP_MODEL")" \
+        --output-dir "$STATS_OUT"
+    fi
+  fi
+fi
+
 # ---------------- Reward rerank pipeline (review_reward_rerank) ----------------
 gen_candidates() {
   local cfg="$1"
