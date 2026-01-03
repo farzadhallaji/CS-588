@@ -7,6 +7,9 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export PYTHONPATH="$ROOT:${PYTHONPATH:-}"
 
+# Output roots (OUT_DIR can be overridden)
+OUT_DIR="${OUT_DIR:-$ROOT/results}"
+
 # Shared defaults
 RAW_DATA="${RAW_DATA:-$ROOT/../CRScore/human_study/phase1/raw_data.json}"
 SPLIT="${SPLIT:-all}" # dev|test|all
@@ -17,15 +20,14 @@ MAX_CHANGE="${MAX_CHANGE:-0.7}"
 OLLAMA_MODEL="${OLLAMA_MODEL:-llama3:8b-instruct-q4_0}"
 EXTRA_OLLAMA_MODELS="${EXTRA_OLLAMA_MODELS:-deepseek-coder:6.7b-base-q4_0,qwen2.5-coder:7b}" # comma-separated
 THRESHOLD_PROMPTS="${THRESHOLD_PROMPTS:-default,concise,evidence,test-heavy}"
-THETA_SENS_OUT="${THETA_SENS_OUT:-$OUT_DIR/$SPLIT/theta_sensitivity}"
-EVIDENCE_SENS_OUT="${EVIDENCE_SENS_OUT:-$OUT_DIR/$SPLIT/evidence_sensitivity}"
-ITER_SENS_OUT="${ITER_SENS_OUT:-$OUT_DIR/$SPLIT/iter_sensitivity}"
 
-# Output roots
-OUT_DIR="${OUT_DIR:-$ROOT/results}"
+# Output paths that depend on OUT_DIR/SPLIT
 BASE_OUT="${BASE_OUT:-$OUT_DIR/$SPLIT/baseline}"
 RERANK_OUT="${RERANK_OUT:-$OUT_DIR/$SPLIT/reward_rerank}"
 HF_OUT_DIR="${HF_OUT_DIR:-$ROOT/results_hf}"
+THETA_SENS_OUT="${THETA_SENS_OUT:-$OUT_DIR/$SPLIT/theta_sensitivity}"
+EVIDENCE_SENS_OUT="${EVIDENCE_SENS_OUT:-$OUT_DIR/$SPLIT/evidence_sensitivity}"
+ITER_SENS_OUT="${ITER_SENS_OUT:-$OUT_DIR/$SPLIT/iter_sensitivity}"
 
 # Baseline/proposal outputs
 SPLITS_OUT="${SPLITS_OUT:-$BASE_OUT/splits.json}"

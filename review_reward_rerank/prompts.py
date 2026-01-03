@@ -89,6 +89,96 @@ PROMPT_TEMPLATES: Dict[str, str] = {
         Return ONLY the rewritten review.
         """
     ).strip(),
+    "review_enhancer_strict": dedent(
+        r"""
+        You enhance (NOT rewrite from scratch) a human code review comment.
+
+        HARD RULES (do not break these):
+        - Preserve intent and stance from the seed review.
+          * If the seed is unsure/hedged, keep it unsure/hedged.
+          * If the seed asks a question, KEEP IT A QUESTION (must contain '?' and remain a question).
+          * Do not turn questions/suggestions into factual claims.
+        - Keep it short and high-signal.
+          * Target 2–4 bullets OR 3–6 short sentences (choose the shorter that still covers the important points).
+          * Max ~90 words total. No greetings. No filler.
+        - No new unverifiable claims.
+          * Only use what is supported by Claims and (if provided) Diff/Evidence.
+          * If something is not verifiable, phrase it as a question or a test/verification suggestion.
+        - Cover important points.
+          * Prioritize Uncovered claims first, then remaining claims.
+          * Remove or rewrite Offending sentences, but keep any important intent they contain.
+
+        INPUTS
+        [SEED REVIEW]
+        {seed_review}
+
+        [CLAIMS TO COVER]
+        {claims}
+
+        [UNCOVERED CLAIMS (PRIORITY)]
+        {uncovered_claims}
+
+        [OFFENDING SENTENCES (TRIM/REWRITE)]
+        {offending_sentences}
+
+        [DIFF (EVIDENCE, OPTIONAL)]
+        {diff}
+
+        [EVIDENCE SNIPPETS (OPTIONAL)]
+        {evidence_snippets}
+
+        [OLD CODE CONTEXT (OPTIONAL)]
+        {old_code}
+
+        OUTPUT REQUIREMENTS
+        - Return ONLY the improved review text.
+        - Keep questions as questions.
+        - Be concise and actionable.
+        - Do NOT mention these rules.
+        """
+    ).strip(),
+    "review_enhancer_strict_fewshot": dedent(
+        r"""
+        Task: Enhance a code review comment.
+        IMPORTANT: Preserve the seed's intent. Keep questions as questions. Do not invent claims.
+        Keep it short (max ~90 words). No greetings. No filler.
+
+        Allowed edits: rephrase, reorder, merge, delete fluff, convert unverifiable assertions into questions/tests.
+        Forbidden: new facts not supported by Claims/Diff/Evidence; changing a question into a statement.
+
+        Example:
+        Seed: "Not sure this handles null. Can you add a check? Also tests?"
+        Claims: - null handling  - add tests
+        Output:
+        - Does this handle null inputs? Consider an explicit guard/check.
+        - Add a unit test covering null/empty edge cases.
+
+        Now do the same for the following.
+
+        [SEED REVIEW]
+        {seed_review}
+
+        [CLAIMS TO COVER]
+        {claims}
+
+        [UNCOVERED CLAIMS (PRIORITY)]
+        {uncovered_claims}
+
+        [OFFENDING SENTENCES (TRIM/REWRITE)]
+        {offending_sentences}
+
+        [DIFF (EVIDENCE, OPTIONAL)]
+        {diff}
+
+        [EVIDENCE SNIPPETS (OPTIONAL)]
+        {evidence_snippets}
+
+        [OLD CODE CONTEXT (OPTIONAL)]
+        {old_code}
+
+        Output ONLY the improved review text.
+        """
+    ).strip(),
     "claim_extraction": dedent(
         """
         Given this code diff, list the key review-worthy claims (max 6) as short, atomic items.
@@ -101,7 +191,14 @@ PROMPT_TEMPLATES: Dict[str, str] = {
     ).strip(),
 }
 
-PROMPT_VARIANTS = ["default", "concise", "evidence_grounded", "test_heavy"]
+PROMPT_VARIANTS = [
+    "default",
+    "concise",
+    "evidence_grounded",
+    "test_heavy",
+    "review_enhancer_strict",
+    "review_enhancer_strict_fewshot",
+]
 
 
 def _fmt_block(title: str, items: Iterable[str]) -> str:

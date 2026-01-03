@@ -1,0 +1,38 @@
+[
+  {
+    "theta": 0.5,
+    "gated": 106,
+    "gated_pct": 0.8833333333333333,
+    "improved": 103,
+    "avg_rel_delta": 0.6872171169596508,
+    "median_rel_delta": 0.7272727272727273,
+    "avg_iterations_per_item": 0.8833333333333333,
+    "avg_llm_calls_per_item": 0.8833333333333333,
+    "llm_calls_total": 106,
+    "output": "/home/ri/Desktop/S2/DS/package/ProposedApproach/results/test/theta_sensitivity/threshold_0.50.jsonl"
+  },
+  {
+    "theta": 0.6,
+    "gated": 111,
+    "gated_pct": 0.925,
+    "improved": 108,
+    "avg_rel_delta": 0.6572744002507275,
+    "median_rel_delta": 0.6666666666666666,
+    "avg_iterations_per_item": 0.925,
+    "avg_llm_calls_per_item": 0.925,
+    "llm_calls_total": 111,
+    "output": "/home/ri/Desktop/S2/DS/package/ProposedApproach/results/test/theta_sensitivity/threshold_0.60.jsonl"
+  },
+  {
+    "theta": 0.7,
+    "gated": 116,
+    "gated_pct": 0.9666666666666667,
+    "improved": 111,
+    "avg_rel_delta": 0.6238856022887627,
+    "median_rel_delta": 0.6666666666666666,
+    "avg_iterations_per_item": 0.9666666666666667,
+    "avg_llm_calls_per_item": 0.9666666666666667,
+    "llm_calls_total": 116,
+    "output": "/home/ri/Desktop/S2/DS/package/ProposedApproach/results/test/theta_sensitivity/threshold_0.70.jsonl"
+  }
+]

@@ -1,0 +1,150 @@
+[
+  {
+    "lang": "py",
+    "good": "do we also need to change `mlvl_confid` -> `mlvl_confidences`>",
+    "bad": "do we also need to change `mlvl_confid` -> `mlvl_confidences`>",
+    "pseudo_refs": [
+      "The variable name 'confids' has been changed to 'confidences' in the decoding process of the bounding box predictions.",
+      "The append operation for 'mlvl_confids' has been updated to use the new variable name 'confidences' instead of 'confids'.",
+      "This change corrects a possible typo in the variable name used in the decoding process. This could prevent potential errors in the future by ensuring that the variable name is correct.",
+      "The change in the append operation implies that the 'mlvl_confids' list now contains the 'confidences' instead of the previous 'confids'. This could affect any"
+    ]
+  },
+  {
+    "lang": "java",
+    "good": "If clientCert attribute doesn't exist for some reason I set it to false.",
+    "bad": "If clientCert attribute doesn't exist for some reason I set it to false.",
+    "pseudo_refs": [
+      "A new boolean variable named 'clientCert' has been introduced.",
+      "A try-catch block has been added to handle any exceptions that might occur when trying to get the boolean value of the 'clientCert' from the 'item'.",
+      "If an exception is caught, a warning message is logged, and 'clientCert' is set to false.",
+      "The code now has the ability to handle exceptions when trying to get the 'clientCert' from the 'item'. This can prevent potential runtime errors if the 'clientCert' does not exist in the 'item'.",
+      "The logging of the warning message can help in debugging and tracking the issues related to the absence of",
+      "line 104, UnusedLocalVariable:\tAvoid unused local variables such as 'clientCert'.",
+      "line 108, GuardLogStatement:\tLogger calls should be surrounded by log level guards."
+    ]
+  },
+  {
+    "lang": "js",
+    "good": "Could you replace local hook with global hook `afterModifyTransformStart`?",
+    "bad": "Could you replace local hook with global hook `afterModifyTransformStart`?",
+    "pseudo_refs": [
+      "A new line of code has been added to the MergeCells class.",
+      "The new line of code adds a local hook to the 'afterTransformStart' event of the transformation of the selection in the hot.selection object.",
+      "The callback function for this hook is set to the 'onAfterLocalTransformStart' method of the MergeCells class.",
+      "The 'onAfterLocalTransformStart' method will now be called after any transformation start event in the hot.selection.transformation object.",
+      "This could potentially change the behavior of the application in response to transformation start events.",
+      "If the 'onAfterLocalTransformStart' method is not",
+      "line 94, col 76, 'rest operator' is only available in ES6 (use 'esversion: 6').",
+      "line 94, col 83, 'arrow function syntax (=>)' is only available in ES6 (use 'esversion: 6')."
+    ]
+  },
+  {
+    "lang": "js",
+    "good": "is this a breaking change? If I'm not mistaken, this is translating a user-provided `wtimeout` in the connection string into `wTimeoutMS`",
+    "bad": "is this a breaking change?",
+    "pseudo_refs": [
+      "The code change involves the removal of a key-value pair from the constant object CASE_TRANSLATION. The key removed is 'wtimeout'.",
+      "The removal of 'wtimeout' from the CASE_TRANSLATION object will prevent any future references to 'wtimeout' in the codebase from accessing the value 'wTimeoutMS'.",
+      "This could potentially lead to errors if the 'wtimeout' is still being used in the codebase.",
+      "The removal of this key-value pair will also remove the corresponding entry from the object, freeing up memory."
+    ]
+  },
+  {
+    "lang": "js",
+    "good": "hmm, I think we can just do `new Error(assembly.error)` and that should set `error.message` correctly too. I don't know why it was done this way with a separate `.message` assignment before :sweat_smile: Should we do `error.assembly = assembly` so the template editor can access it that way, rather than parsing `error.details`?",
+    "bad": "I don't know why it was done this way with a separate `.message` assignment before :sweat_smile: Should we do `error.assembly = assembly` so the template editor can access it that way, rather than parsing `error.details`? Looks good overall.",
+    "pseudo_refs": [
+      "The error object is now created using the entire 'assembly' object instead of just the 'error' property.",
+      "The 'details' property of the error object is now set to the 'message' property of the 'assembly' object.",
+      "An additional check has been added to include the 'assembly_id' property of the 'assembly' object in the 'details' property of the error object, if it exists.",
+      "The error message will now be more descriptive, as it will now include the entire 'assembly' object. This could potentially make debugging more difficult.",
+      "The 'details' property of the error object will now include the 'assembly_id",
+      "line 12, col 6, Missing semicolon.",
+      "line 47, col 9, 'const' is available in ES6 (use 'esversion: 6') or Mozilla JS extensions (use moz).",
+      "line 47, col 42, Missing semicolon."
+    ]
+  },
+  {
+    "lang": "py",
+    "good": "What if we changed this to this? roleText=attrs.get('roleText', lambda:getSpeechTextForProperties(reason=reason,role=role)) That will prevent the function from ever needing called in the roletext case, and removes that if.",
+    "bad": "What if we changed this to this? Looks good overall.",
+    "pseudo_refs": [
+      "The code has been modified to change the way the 'roleText' variable is assigned.",
+      "Previously, 'roleText' was assigned the value returned by the 'getSpeechTextForProperties' function with 'reason' and 'role' as parameters.",
+      "Now, 'roleText' is assigned the value of the 'roleText' attribute from the 'attrs' dictionary.",
+      "If the 'roleText' attribute does not exist in the 'attrs' dictionary, 'roleText' is assigned the value returned by the 'getSpeechTextForProperties' function with 'reason' and 'role' as parameters.",
+      "The change allows for"
+    ]
+  },
+  {
+    "lang": "py",
+    "good": "Shouldn't this be `tm_cpp` to match `temporalImp`? (There are multiple CPP implementations, so 'cpp' is ambiguous.)",
+    "bad": "(There are multiple CPP implementations, so 'cpp' is ambiguous.). Looks good overall.",
+    "pseudo_refs": [
+      "An additional parameter 'tmImplementation' has been added to the function 'getScalarMetricWithTimeOfDayAnomalyParams'.",
+      "The default value of the 'tmImplementation' parameter is set to \"cpp\".",
+      "The function 'getScalarMetricWithTimeOfDayAnomalyParams' can now be called with an additional argument 'tmImplementation'.",
+      "If 'tmImplementation' is not provided, the function will use the default value, which is \"cpp\".",
+      "This change could potentially affect the behavior of the function depending on the value of 'tmImplementation'. If the value is not \"cpp\", the function may not"
+    ]
+  },
+  {
+    "lang": "java",
+    "good": "Can we give this field a more descriptive name? When I use a variable named `icon` I normally expect an `Image` object.",
+    "bad": "Can we give this field a more descriptive name? Looks good overall.",
+    "pseudo_refs": [
+      "A new private final URI variable named 'icon' has been added to the ScriptDTO class.",
+      "The addition of the 'icon' variable suggests that the ScriptDTO class will now hold a reference to a Uniform Resource Identifier (URI), which could be used to represent a specific icon or image associated with the script.",
+      "This change could potentially affect all methods and constructors in the ScriptDTO class, as well as any classes or methods that use the ScriptDTO class, as they now have access to a new field.",
+      "If the 'icon' field is not initialized properly, it could lead to a NullPointerException. Therefore, it's important"
+    ]
+  },
+  {
+    "lang": "py",
+    "good": "We don't have `target_name` on `@sensor` - why introduce it for `@asset_sensor`? If we do want to introduce it everywhere, can we just call it `job_name` to avoid introducing a new term?",
+    "bad": "If we do want to introduce it everywhere, can we just call it `job_name` to avoid introducing a new term? Looks good overall.",
+    "pseudo_refs": [
+      "A new optional parameter 'target_name' has been added to the function 'asset_sensor'. This parameter is of type string and is set to None by default.",
+      "The function 'asset_sensor' can now be called with an additional argument 'target_name'. This could allow for more specific or differentiated sensor operations based on the target name.",
+      "Existing code that calls this function without the 'target_name' argument will not be affected, as the function will default to None. Conversely, code that calls this function with a 'target_name' argument will need to be updated to include this new parameter.",
+      "This change could potentially"
+    ]
+  },
+  {
+    "lang": "py",
+    "good": "`hex(i)[2:]` is trying to do the same thing above. what is `i` in your malformed case?",
+    "bad": "what is `i` in your malformed case? Looks good overall.",
+    "pseudo_refs": [
+      "A line of code has been added to the function int_to_hex(i, length=1).",
+      "The added line of code is 's = s.lstrip('0x')'.",
+      "This line of code is used to remove the '0x' prefix from the string 's'.",
+      "The '0x' prefix in the hexadecimal representation of the integer is removed from the string 's'.",
+      "This change could potentially alter the output of the function int_to_hex(i, length=1), as the '0x' prefix is no longer present in the returned string.",
+      "If the '0x'"
+    ]
+  },
+  {
+    "lang": "js",
+    "good": "This just feels weird... can we use some kind of constant here? something like: `if (_.isUndefined(data) || data === PrivateKey.Random)`",
+    "bad": "This just feels weird... Looks good overall.",
+    "pseudo_refs": [
+      "The condition for the if statement has been changed. Previously, it was checking if the 'data' variable was not defined. Now, it checks if the 'data' variable is either undefined or equal to 'random'.",
+      "The code now handles a new condition where the 'data' variable could be either undefined or equal to 'random'. This could potentially lead to different behavior depending on the value of the 'data' variable.",
+      "The change could potentially affect the way the 'PrivateKey' function handles data, as it now has more flexibility in what it accepts as input.",
+      "If the 'data' variable is equal to 'random', the function will now generate a random"
+    ]
+  },
+  {
+    "lang": "js",
+    "good": "I think the more complete solution will save off a `ignoreUndefined` in the base class for the bulk operation (with a default of `false`), and use that for calculations. Was there a reason you didn't want to support the option from the operation level?",
+    "bad": "Was there a reason you didn't want to support the option from the operation level? Looks good overall.",
+    "pseudo_refs": [
+      "The code change is in the function addToOperationsList where the BSON options are being set.",
+      "The option 'checkKeys: false' has been removed and added back, possibly to correct a formatting or syntax error.",
+      "A new option 'ignoreUndefined: false' has been added. This is likely to change the behavior of the BSON size calculation.",
+      "The removal and re-addition of 'checkKeys: false' does not change the functionality of the code but might be a part of code formatting or syntax correction.",
+      "The addition of 'ignoreUndefined: false' implies that the BSON size calculation will now consider"
+    ]
+  }
+]

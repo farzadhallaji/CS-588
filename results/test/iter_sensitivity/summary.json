@@ -1,0 +1,38 @@
+[
+  {
+    "iters": 1,
+    "total": 120,
+    "improved": 2,
+    "avg_final_rel": 0.12211374681962918,
+    "avg_rel_delta": 0.00648148148148148,
+    "median_rel_delta": 0.0,
+    "avg_iters_used": 1.0,
+    "avg_llm_calls_per_item": 2.0,
+    "llm_calls_total": 240,
+    "output": "/home/ri/Desktop/S2/DS/package/ProposedApproach/results/test/iter_sensitivity/iters_1.jsonl"
+  },
+  {
+    "iters": 2,
+    "total": 120,
+    "improved": 3,
+    "avg_final_rel": 0.1266592013650837,
+    "avg_rel_delta": 0.011026936026936026,
+    "median_rel_delta": 0.0,
+    "avg_iters_used": 1.025,
+    "avg_llm_calls_per_item": 2.05,
+    "llm_calls_total": 246,
+    "output": "/home/ri/Desktop/S2/DS/package/ProposedApproach/results/test/iter_sensitivity/iters_2.jsonl"
+  },
+  {
+    "iters": 3,
+    "total": 120,
+    "improved": 2,
+    "avg_final_rel": 0.12211374681962918,
+    "avg_rel_delta": 0.00648148148148148,
+    "median_rel_delta": 0.0,
+    "avg_iters_used": 1.025,
+    "avg_llm_calls_per_item": 2.05,
+    "llm_calls_total": 246,
+    "output": "/home/ri/Desktop/S2/DS/package/ProposedApproach/results/test/iter_sensitivity/iters_3.jsonl"
+  }
+]

@@ -1,0 +1,41 @@
+[
+  {
+    "theta": 0.5,
+    "total": 120,
+    "gated": 106,
+    "gated_pct": 0.8833333333333333,
+    "avg_seed_rel": 0.11563226533814769,
+    "avg_gated_rel": 0.0443841058435953,
+    "per_lang": {
+      "java": 34,
+      "js": 34,
+      "py": 38
+    }
+  },
+  {
+    "theta": 0.6,
+    "total": 120,
+    "gated": 111,
+    "gated_pct": 0.925,
+    "avg_seed_rel": 0.11563226533814769,
+    "avg_gated_rel": 0.06596034537211008,
+    "per_lang": {
+      "java": 35,
+      "js": 36,
+      "py": 40
+    }
+  },
+  {
+    "theta": 0.7,
+    "total": 120,
+    "gated": 116,
+    "gated_pct": 0.9666666666666667,
+    "avg_seed_rel": 0.11563226533814769,
+    "avg_gated_rel": 0.09141077257203017,
+    "per_lang": {
+      "java": 37,
+      "js": 39,
+      "py": 40
+    }
+  }
+]

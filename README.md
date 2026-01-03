@@ -68,3 +68,21 @@ export RAW_DATA=/path/to/raw_data.json
 bash review_reward_rerank/run_reward_rerank.sh
 ```
 Use the env vars inside that script to adjust models, prompt variants, and scoring weights.
+
+
+
+### Example:
+```
+cd /home/ri/Desktop/S2/DS/package/ProposedApproach
+export RAW_DATA=$PWD/CRScore-human_study/phase1/raw_data.json
+export SPLIT=test
+export OLLAMA_MODEL="llama3:8b-instruct-q4_0"
+./run_all.sh
+```
+---
+
+```
+export OLLAMA_MODEL="llama3:8b-instruct-q4_0"    # base
+export EXTRA_OLLAMA_MODELS="deepseek-coder:6.7b-base-q4_0,qwen2.5-coder:7b"
+./run_all.sh
+```
